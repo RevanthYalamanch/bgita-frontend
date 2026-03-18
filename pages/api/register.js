@@ -4,10 +4,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 🌉 Send the registration data to your Python server
-    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     
-    const backendRes = await fetch(`${backendUrl}/api/login`, {
+    // Fixed: Now pointing to /api/register
+    const backendRes = await fetch(`${backendUrl}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body),
