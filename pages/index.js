@@ -21,7 +21,7 @@ export default function Login() {
 
     try {
       // 🔥 Your Cloud Shell Backend URL
-      const BACKEND_URL = "https://8000-cs-00f660d0-bc17-4554-959e-8fea61fcb013.cs-us-east1-yeah.cloudshell.dev"; 
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL; 
       
       // Sending the login request to FastAPI
       // Note: Change '/login' to '/api/login' if that is how your backend route is named!
