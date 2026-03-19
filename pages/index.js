@@ -25,7 +25,7 @@ export default function Login() {
       
       // Sending the login request to FastAPI
       // Note: Change '/login' to '/api/login' if that is how your backend route is named!
-      const response = await fetch(`${BACKEND_URL}/login`, {
+      const response = await fetch(`${BACKEND_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
