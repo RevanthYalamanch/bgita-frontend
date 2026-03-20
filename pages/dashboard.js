@@ -175,7 +175,7 @@ export default function Dashboard() {
                 <Box key={index} sx={{ display: 'flex', gap: 2, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
                   <Avatar sx={{ bgcolor: msg.role === 'user' ? 'grey.800' : 'primary.dark' }}>{msg.role === 'user' ? '👤' : '🧠'}</Avatar>
                   <Paper sx={{ p: 2, bgcolor: msg.role === 'user' ? 'primary.dark' : '#27272a', color: msg.role === 'user' ? 'white' : 'text.primary', maxWidth: '80%', borderRadius: 3 }}>
-                    <Typography>{msg.content}</Typography>
+                    <Typography sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                   </Paper>
                 </Box>
               ))}
@@ -276,7 +276,7 @@ export default function Dashboard() {
                           <Box key={index} sx={{ display: 'flex', gap: 1.5, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
                             <Avatar sx={{ bgcolor: msg.role === 'user' ? 'grey.800' : 'primary.dark', width: 32, height: 32 }}>{msg.role === 'user' ? '👤' : '🧠'}</Avatar>
                             <Paper sx={{ p: 1.5, bgcolor: msg.role === 'user' ? 'primary.dark' : '#27272a', color: msg.role === 'user' ? 'white' : 'text.primary', maxWidth: '85%', borderRadius: 2 }}>
-                              <Typography variant="body2">{msg.content}</Typography>
+                              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                             </Paper>
                           </Box>
                         ))}
