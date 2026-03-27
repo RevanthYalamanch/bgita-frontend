@@ -23,6 +23,10 @@ function TabPanel(props) {
 export default function Dashboard() {
   const router = useRouter();
   const [tabValue, setTabValue] = useState(2); // Start on Curriculum Tab
+
+  // 👤 DYNAMIC USER STATE
+  const [userName, setUserName] = useState('');
+  const [sessionId, setSessionId] = useState('');
   
   // Diary State
   const [mood, setMood] = useState(null);
@@ -46,7 +50,29 @@ export default function Dashboard() {
   const [exerciseData, setExerciseData] = useState('');
   const [blueprintData, setBlueprintData] = useState('');
 
-  const handleLogout = () => router.push('/');
+  // 🚀 ON PAGE LOAD: GET THE NAME
+  useEffect(() => {
+    const userString = localStorage.getItem('user');
+    setSessionId(Math.random().toString(36).substring(2, 15));
+    
+    if (userString) {
+      // Unpack the JSON object!
+      const userData = JSON.parse(userString);
+      setUserName(userData.name || 'Guest');
+      
+      setChatMessages([
+        { role: 'ai', content: `Hello ${userData.name || 'Guest'}. I am your Cognitive Space guide. How are you feeling today?` }
+      ]);
+    } else {
+      setUserName('Guest');
+    }
+  }, []);
+
+  const handleLogout = () => {
+    // Clear the name when they log out for privacy!
+    localStorage.removeItem('userName');
+    router.push('/');
+  };
 
   const handleSaveDiary = () => {
     if (!mood || !diaryText) return;
@@ -56,19 +82,26 @@ export default function Dashboard() {
     setTimeout(() => setDiarySaved(false), 3000);
   };
 
-  const handleSendMessage = async () => {
+const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
     const userText = chatInput;
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', content: userText }]);
     setIsLoading(true);
 
+    // 🛡️ SAFE EXTRACTION: Grab the email safely before hitting the network
+    const userString = localStorage.getItem('user');
+    const userEmail = userString ? JSON.parse(userString).email : "unknown_user";
+
     try {
       const response = await fetch(`/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // We will update this later to pass the activeLesson.id if they are in a lesson!
-        body: JSON.stringify({ message: userText }),
+        body: JSON.stringify({ 
+          message: userText, 
+          session_id: sessionId, 
+          email: userEmail // 👈 Use the safe variable here
+        }),
       });
       const data = await response.json();
       setChatMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
@@ -86,14 +119,19 @@ export default function Dashboard() {
     setLessonChatMessages(prev => [...prev, { role: 'user', content: userText }]);
     setIsLessonChatLoading(true);
 
+    // 🛡️ SAFE EXTRACTION: Grab the email safely before hitting the network
+    const userString = localStorage.getItem('user');
+    const userEmail = userString ? JSON.parse(userString).email : "unknown_user";
+
     try {
       const response = await fetch(`/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // 🔥 Notice how we are sending BOTH the message and the specific lesson rules!
         body: JSON.stringify({ 
           message: userText,
-          context: activeLesson.ai_prompt_context 
+          context: activeLesson.ai_prompt_context,
+          session_id: sessionId, 
+          email: userEmail // 👈 Use the safe variable here
         }),
       });
       const data = await response.json();
@@ -116,11 +154,38 @@ export default function Dashboard() {
 
 
 
-  const finishLesson = () => {
-    // In the future, this saves exerciseData and blueprintData to PostgreSQL
-    setUnlockedLevel(prev => Math.max(prev, activeLesson.id + 1));
-    setActiveLesson(null);
-    setActiveStep(0);
+  const finishLesson = async () => {
+    // 1. Grab the JSON package and unpack the email
+    const userString = localStorage.getItem('user');
+    const userEmail = userString ? JSON.parse(userString).email : null;
+    
+    if (!userEmail) {
+      alert("Session expired. Please log out and log back in.");
+      return;
+    }
+
+    try {
+      // 2. Send the data to your Next.js bridge
+      await fetch('/api/lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          lesson_id: activeLesson.id,
+          exercise_data: exerciseData,
+          blueprint_data: blueprintData
+        })
+      });
+
+      // 3. Close the wizard and unlock the next level!
+      setUnlockedLevel(prev => Math.max(prev, activeLesson.id + 1));
+      setActiveLesson(null);
+      setActiveStep(0);
+      
+    } catch (error) {
+      console.error("Failed to save lesson:", error);
+      alert("Failed to save your progress. Please check your internet connection.");
+    }
   };
 
   return (
@@ -134,7 +199,10 @@ export default function Dashboard() {
             <Typography variant="h4" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box sx={{ width: 24, height: 24, bgcolor: 'primary.main', borderRadius: 1 }} /> Cognitive Space
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Welcome back, Revanth.</Typography>
+            {/* 👤 Injecting the dynamic name here! */}
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Welcome back, {userName}.
+            </Typography>
           </Box>
           <Button color="error" startIcon={<ExitToApp />} onClick={handleLogout}>Logout</Button>
         </Box>
@@ -205,11 +273,10 @@ export default function Dashboard() {
                             {!isUnlocked ? <Lock fontSize="small" /> : (lesson.id < unlockedLevel ? <CheckCircle color="primary" fontSize="small" /> : null)}
                             Module {lesson.id}: {lesson.title}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">{lesson.time_estimate}</Typography>
                         </Box>
                         {isUnlocked && (
                           <Button variant={isCurrent ? "contained" : "outlined"} color="primary" onClick={() => startLesson(lesson)} sx={{ mt: 1 }}>
-                            {isCurrent ? "Start 60-Min Module" : "Review Module"}
+                            {isCurrent ? "Start Module" : "Review Module"}
                           </Button>
                         )}
                       </Paper>
@@ -317,7 +384,7 @@ export default function Dashboard() {
                   {activeStep < 3 ? (
                     <Button variant="contained" endIcon={<ArrowForward />} onClick={() => setActiveStep(prev => prev + 1)}>Next Phase</Button>
                   ) : (
-                    <Button variant="contained" color="success" endIcon={<CheckCircle />} onClick={finishLesson} disabled={!blueprintData}>Complete 60-Min Module</Button>
+                    <Button variant="contained" color="success" endIcon={<CheckCircle />} onClick={finishLesson} disabled={!blueprintData}>Complete Module</Button>
                   )}
                 </Box>
 
