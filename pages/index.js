@@ -13,6 +13,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loginMode, setLoginMode] = useState('user');
+  const [adminCode, setAdminCode] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ export default function Login() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: email, password: password }),
+        body: JSON.stringify({ email: email, password: password, name:name, admin_code: adminCode}),
       });
 
       if (!response.ok) {
@@ -41,11 +43,14 @@ export default function Login() {
       const data = await response.json();
 
       // Save the user data/token securely in the browser
-      localStorage.setItem('user', JSON.stringify({ email: email }));
+      localStorage.setItem('user', JSON.stringify({ 
+        email: data.user.email, 
+        name: data.user.name 
+      }));
+
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
       }
-
       // Success! Send them to the dashboard
       router.push('/dashboard');
 
@@ -85,6 +90,16 @@ export default function Login() {
               value={password} onChange={(e) => setPassword(e.target.value)} 
               required
             />
+            <div className="mt-4">
+            <input 
+              type="password" 
+              placeholder="Admin Access Code (Optional)" 
+              value={adminCode}
+              onChange={(e) => setAdminCode(e.target.value)}
+              className="w-full bg-gray-900 border border-gray-700 text-white p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-900 transition-all placeholder-gray-500" 
+            />
+            <p className="text-xs text-gray-500 mt-1 ml-2">Leave blank for standard patient registration.</p>
+          </div>
             
             <Button 
               fullWidth type="submit" variant="contained" size="large" 
