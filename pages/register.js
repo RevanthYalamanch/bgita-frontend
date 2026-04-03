@@ -110,7 +110,7 @@ export default function Register() {
 
           {/* THE LOGIN LINK */}
           <Typography align="center" variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-            Already have an account? <span style={{ color: '#14b8a6', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }} onClick={() => router.push('/')}>Sign in here</span>
+            Already have an account? <span style={{ color: '#14b8a6', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }} onClick={() => router.push('/login')}>Sign in here</span>
           </Typography>
           
         </Paper>
