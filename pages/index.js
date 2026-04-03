@@ -13,8 +13,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Track whether they are logging in as a 'user' or 'admin'
   const [loginMode, setLoginMode] = useState('user');
-  const [adminCode, setAdminCode] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,37 +23,48 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // 🔥 Your Cloud Shell Backend URL
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL; 
       
-      // Sending the login request to FastAPI
-      // Note: Change '/login' to '/api/login' if that is how your backend route is named!
+      // Send only email and password for login
       const response = await fetch(`${BACKEND_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: email, password: password, name:name, admin_code: adminCode}),
+        body: JSON.stringify({ email: email, password: password }),
       });
 
       if (!response.ok) {
-        // If the server sends a 401 Unauthorized or 404 Not Found
         const errorData = await response.json();
         throw new Error(errorData.detail || "Invalid email or password.");
       }
 
       const data = await response.json();
 
-      // Save the user data/token securely in the browser
+      // 🛡️ THE BOUNCER LOGIC
+      // Check if they are actually an admin
+      const isActuallyAdmin = data.user.role && data.user.role.includes('admin');
+
+      if (loginMode === 'admin' && !isActuallyAdmin) {
+        throw new Error("Access Denied: You do not have administrator privileges.");
+      }
+
+      // Save the user data securely, including their role
       localStorage.setItem('user', JSON.stringify({ 
         email: data.user.email, 
-        name: data.user.name 
+        name: data.user.name,
+        role: data.user.role
       }));
 
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
       }
-      // Success! Send them to the dashboard
-      router.push('/dashboard');
+      
+      // Route them to the correct dashboard
+      if (loginMode === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
 
     } catch (err) {
       setError(err.message);
@@ -72,46 +84,60 @@ export default function Login() {
             <Typography variant="h5" fontWeight="bold">Cognitive Space</Typography>
           </Box>
 
+          {/* 🔘 THE PATIENT / ADMIN TOGGLE */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button 
+              type="button"
+              onClick={() => setLoginMode('user')}
+              style={{
+                flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer', transition: '0.2s',
+                backgroundColor: loginMode === 'user' ? '#14b8a6' : '#27272a',
+                color: loginMode === 'user' ? '#000' : '#a1a1aa'
+              }}
+            >
+              Patient
+            </button>
+            <button 
+              type="button"
+              onClick={() => setLoginMode('admin')}
+              style={{
+                flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer', transition: '0.2s',
+                backgroundColor: loginMode === 'admin' ? '#7f1d1d' : '#27272a',
+                color: loginMode === 'admin' ? '#fecaca' : '#a1a1aa'
+              }}
+            >
+              Admin
+            </button>
+          </div>
+
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 4 }}>
-            Sign in to continue your journey.
+            {loginMode === 'admin' ? "Sign in to the Admin Portal." : "Sign in to continue your journey."}
           </Typography>
 
-          {/* Show Errors here if login fails */}
           {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
           <form onSubmit={handleLogin}>
             <TextField 
               fullWidth label="Email" variant="outlined" margin="normal" 
-              value={email} onChange={(e) => setEmail(e.target.value)} 
-              required
+              value={email} onChange={(e) => setEmail(e.target.value)} required
             />
             <TextField 
               fullWidth label="Password" type="password" variant="outlined" margin="normal" sx={{ mb: 3 }} 
-              value={password} onChange={(e) => setPassword(e.target.value)} 
-              required
+              value={password} onChange={(e) => setPassword(e.target.value)} required
             />
-            <div className="mt-4">
-            <input 
-              type="password" 
-              placeholder="Admin Access Code (Optional)" 
-              value={adminCode}
-              onChange={(e) => setAdminCode(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 text-white p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-900 transition-all placeholder-gray-500" 
-            />
-            <p className="text-xs text-gray-500 mt-1 ml-2">Leave blank for standard patient registration.</p>
-          </div>
             
             <Button 
               fullWidth type="submit" variant="contained" size="large" 
-              sx={{ py: 1.5, fontWeight: 'bold' }}
+              sx={{ py: 1.5, fontWeight: 'bold', bgcolor: loginMode === 'admin' ? '#7f1d1d' : 'primary.main', '&:hover': { bgcolor: loginMode === 'admin' ? '#991b1b' : 'primary.dark' } }}
               disabled={isLoading}
             >
-              {isLoading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : (loginMode === 'admin' ? "Enter Admin Portal" : "Sign In")}
             </Button>
           </form>
 
+          {/* THE REGISTER LINK */}
           <Typography align="center" variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-            Don't have an account? <span style={{ color: '#14b8a6', cursor: 'pointer' }} onClick={() => router.push('/register')}>Register here</span>
+            Don't have an account? <span style={{ color: '#14b8a6', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }} onClick={() => router.push('/register')}>Register here</span>
           </Typography>
           
         </Paper>
