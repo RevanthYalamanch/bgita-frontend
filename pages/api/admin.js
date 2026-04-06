@@ -19,4 +19,8 @@ export default async function handler(req, res) {
     console.error("Admin Bridge Error:", error);
     return res.status(500).json({ status: "error", message: "Failed to connect to Python backend." });
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> c1246e35143a31673f5a8b7881c0d3a599a63454
