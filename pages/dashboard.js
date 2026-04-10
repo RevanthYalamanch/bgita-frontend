@@ -3,9 +3,9 @@ import { useRouter } from 'next/router';
 import { 
   ThemeProvider, createTheme, CssBaseline, Box, Tabs, Tab, 
   Typography, Button, TextField, Paper, Avatar, CircularProgress, Alert,
-  Stepper, Step, StepLabel, StepButton, Divider
+  Stepper, Step, StepLabel, StepButton, Divider, Chip // 👈 Added Chip
 } from '@mui/material';
-import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward } from '@mui/icons-material';
+import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline } from '@mui/icons-material'; // 👈 Added HelpOutline
 
 // 🗂️ Import your new curriculum database!
 import { LESSON_DATA } from '../data/curriculum';
@@ -188,6 +188,11 @@ const handleSendMessage = async () => {
     }
   };
 
+  // The Lifeline Feature
+  const handleStuck = () => {
+    setLessonChatInput("I'm not sure how to answer that. Can you rephrase the question or give me a multiple-choice hint?");
+  };
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
@@ -337,17 +342,15 @@ const handleSendMessage = async () => {
                         Your AI guide is instructed specifically on Module {activeLesson.id}. Discuss how this concept applies to your life.
                       </Alert>
                       
-                      {/* Lesson Chat History Area */}
-                      <Box sx={{ flex: 1, p: 2, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, bgcolor: '#18181b', borderRadius: 2, border: '1px solid #27272a', mb: 2 }}>
-                        {lessonChatMessages.map((msg, index) => (
-                          <Box key={index} sx={{ display: 'flex', gap: 1.5, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
-                            <Avatar sx={{ bgcolor: msg.role === 'user' ? 'grey.800' : 'primary.dark', width: 32, height: 32 }}>{msg.role === 'user' ? '👤' : '🧠'}</Avatar>
-                            <Paper sx={{ p: 1.5, bgcolor: msg.role === 'user' ? 'primary.dark' : '#27272a', color: msg.role === 'user' ? 'white' : 'text.primary', maxWidth: '85%', borderRadius: 2 }}>
-                              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
-                            </Paper>
-                          </Box>
-                        ))}
-                        {isLessonChatLoading && <CircularProgress size={20} sx={{ ml: 5 }} />}
+                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                        <Chip 
+                          icon={<HelpOutline />} 
+                          label="I'm stuck" 
+                          onClick={handleStuck}
+                          clickable 
+                          color="warning" 
+                          variant="outlined"
+                        />
                       </Box>
 
                       {/* Lesson Chat Input */}
