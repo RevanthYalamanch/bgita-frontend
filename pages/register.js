@@ -32,7 +32,7 @@ export default function Register() {
           email: email, 
           password: password, 
           name: name,
-          admin_code: adminCode, // 👈 The secret passcode is sent here!
+          admin_code: adminCode, 
           role: adminCode ? 'admin' : 'user'
         }),
       });
