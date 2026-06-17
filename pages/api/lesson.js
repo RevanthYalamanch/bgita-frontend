@@ -9,7 +9,10 @@ export default async function handler(req, res) {
     // Forwarding the homework to your new Python endpoint
     const backendRes = await fetch(`${backendUrl}/api/lesson/complete`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+      },
       body: JSON.stringify(req.body),
     });
       

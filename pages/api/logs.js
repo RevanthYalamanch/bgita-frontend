@@ -6,10 +6,12 @@ export default async function handler(req, res) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-    // Fixed: Removed hardcoded localhost
     const backendRes = await fetch(`${backendUrl}/api/logs`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+      },
       body: JSON.stringify(req.body),
     });
     

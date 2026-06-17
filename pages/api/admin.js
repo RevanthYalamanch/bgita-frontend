@@ -5,11 +5,14 @@ export default async function handler(req, res) {
 
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    
-    // Ask Python for the telemetry data
+  
     const backendRes = await fetch(`${backendUrl}/api/admin/metrics`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward the caller's bearer token so the backend can authorize.
+        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+      },
     });
       
     const data = await backendRes.json();

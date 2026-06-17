@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { ThemeProvider, createTheme, CssBaseline, Box, Typography, TextField, Button, Paper, Alert, CircularProgress } from '@mui/material';
-
-const darkTheme = createTheme({
-  palette: { mode: 'dark', background: { default: '#09090b', paper: '#18181b' }, primary: { main: '#14b8a6' } },
-  typography: { fontFamily: 'sans-serif' }
-});
+import { Box, Typography, TextField, Button, Paper, Alert, CircularProgress } from '@mui/material';
+import { fx, tokens } from '../lib/theme';
 
 export default function Login() {
   const router = useRouter();
@@ -74,74 +70,78 @@ export default function Login() {
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-        <Paper elevation={0} sx={{ p: 5, width: '100%', maxWidth: 400, border: '1px solid #27272a', borderRadius: 2 }}>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4, justifyContent: 'center' }}>
-            <Box sx={{ width: 28, height: 28, bgcolor: 'primary.main', borderRadius: 1 }} />
-            <Typography variant="h5" fontWeight="bold">Cognitive Space</Typography>
+        <Box className="fade-up" sx={{ width: '100%', maxWidth: 430 }}>
+
+          {/* Brand */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+            <Box className="float-pulse" sx={{ width: 60, height: 60, borderRadius: '20px', display: 'grid', placeItems: 'center', fontSize: 30, mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}>🧠</Box>
+            <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Cognitive Space</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
+              Bhagavad Gita–informed CBT, in plain modern language.
+            </Typography>
           </Box>
 
-          {/* 🔘 THE PATIENT / ADMIN TOGGLE */}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <button 
-              type="button"
-              onClick={() => setLoginMode('user')}
-              style={{
-                flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer', transition: '0.2s',
-                backgroundColor: loginMode === 'user' ? '#14b8a6' : '#27272a',
-                color: loginMode === 'user' ? '#000' : '#a1a1aa'
-              }}
-            >
-              Patient
-            </button>
-            <button 
-              type="button"
-              onClick={() => setLoginMode('admin')}
-              style={{
-                flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer', transition: '0.2s',
-                backgroundColor: loginMode === 'admin' ? '#7f1d1d' : '#27272a',
-                color: loginMode === 'admin' ? '#fecaca' : '#a1a1aa'
-              }}
-            >
-              Admin
-            </button>
-          </div>
+          <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, ...fx.glassCard }}>
 
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 4 }}>
-            {loginMode === 'admin' ? "Sign in to the Admin Portal." : "Sign in to continue your journey."}
+            {/* Patient / Clinician segmented control */}
+            <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: '14px', bgcolor: 'rgba(255,255,255,0.04)', border: `1px solid ${tokens.border}` }}>
+              {[{ k: 'user', label: 'Patient' }, { k: 'admin', label: 'Clinician' }].map((opt) => (
+                <Box
+                  key={opt.k}
+                  component="button"
+                  type="button"
+                  onClick={() => setLoginMode(opt.k)}
+                  sx={{
+                    flex: 1, py: 1.1, borderRadius: '10px', border: 'none', cursor: 'pointer',
+                    fontFamily: 'inherit', fontWeight: 700, fontSize: '0.9rem', transition: 'all .2s ease',
+                    color: loginMode === opt.k ? '#04141A' : 'text.secondary',
+                    background: loginMode === opt.k ? fx.tealGradient : 'transparent',
+                    boxShadow: loginMode === opt.k ? '0 8px 20px -10px rgba(45,212,191,0.7)' : 'none',
+                  }}
+                >
+                  {opt.label}
+                </Box>
+              ))}
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
+              {loginMode === 'admin' ? 'Sign in to the clinician portal.' : 'Welcome back. Sign in to continue.'}
+            </Typography>
+
+            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+            <form onSubmit={handleLogin}>
+              <TextField
+                fullWidth label="Email" variant="outlined" margin="normal"
+                value={email} onChange={(e) => setEmail(e.target.value)} required
+              />
+              <TextField
+                fullWidth label="Password" type="password" variant="outlined" margin="normal" sx={{ mb: 3 }}
+                value={password} onChange={(e) => setPassword(e.target.value)} required
+              />
+
+              <Button
+                fullWidth type="submit" variant="contained" size="large"
+                sx={{ py: 1.4, fontWeight: 700 }}
+                disabled={isLoading}
+              >
+                {isLoading ? <CircularProgress size={24} color="inherit" /> : (loginMode === 'admin' ? 'Enter Clinician Portal' : 'Sign In')}
+              </Button>
+            </form>
+
+            <Typography align="center" variant="body2" color="text.secondary" sx={{ mt: 3 }}>
+              Don&apos;t have an account?{' '}
+              <Box component="span" sx={{ color: 'primary.light', cursor: 'pointer', fontWeight: 700 }} onClick={() => router.push('/register')}>
+                Create one
+              </Box>
+            </Typography>
+          </Paper>
+
+          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 3, color: 'text.secondary', opacity: 0.75 }}>
+            In crisis? Call or text <strong>988</strong> (US) anytime — you&apos;re not alone.
           </Typography>
-
-          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-
-          <form onSubmit={handleLogin}>
-            <TextField 
-              fullWidth label="Email" variant="outlined" margin="normal" 
-              value={email} onChange={(e) => setEmail(e.target.value)} required
-            />
-            <TextField 
-              fullWidth label="Password" type="password" variant="outlined" margin="normal" sx={{ mb: 3 }} 
-              value={password} onChange={(e) => setPassword(e.target.value)} required
-            />
-            
-            <Button 
-              fullWidth type="submit" variant="contained" size="large" 
-              sx={{ py: 1.5, fontWeight: 'bold', bgcolor: loginMode === 'admin' ? '#7f1d1d' : 'primary.main', '&:hover': { bgcolor: loginMode === 'admin' ? '#991b1b' : 'primary.dark' } }}
-              disabled={isLoading}
-            >
-              {isLoading ? <CircularProgress size={24} color="inherit" /> : (loginMode === 'admin' ? "Enter Admin Portal" : "Sign In")}
-            </Button>
-          </form>
-
-          {/* THE REGISTER LINK */}
-          <Typography align="center" variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-            Don't have an account? <span style={{ color: '#14b8a6', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }} onClick={() => router.push('/register')}>Register here</span>
-          </Typography>
-          
-        </Paper>
+        </Box>
       </Box>
-    </ThemeProvider>
   );
 }

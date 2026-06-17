@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { 
-  ThemeProvider, createTheme, CssBaseline, Box, Typography, Button, 
+import {
+  Box, Typography, Button,
   Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress,
   Tabs, Tab
 } from '@mui/material';
 import { ArrowBack, Speed, MenuBook, Mood } from '@mui/icons-material';
-
-const darkTheme = createTheme({
-  palette: { mode: 'dark', background: { default: '#09090b', paper: '#18181b' }, primary: { main: '#14b8a6' } },
-  typography: { fontFamily: 'sans-serif' }
-});
+import { fx, tokens } from '../lib/theme';
 
 // A quick helper to show tabs
 function TabPanel(props) {
@@ -32,17 +28,26 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const userString = localStorage.getItem('user');
-    if (!userString) {
+    const token = localStorage.getItem('token');
+    if (!userString || !token) {
       router.push('/');
       return;
     }
 
     const fetchMetrics = async () => {
       try {
-        // Your bridge file automatically forwards to the Python endpoint
-        const response = await fetch('/api/admin');
+        // Your bridge file automatically forwards to the Python endpoint.
+        const response = await fetch('/api/admin', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Backend rejects non-admins (401/403) — send them away.
+        if (response.status === 401 || response.status === 403) {
+          router.push('/');
+          return;
+        }
+
         const result = await response.json();
-        
         if (result.status === 'success') {
           setDashboardData(result.data);
         }
@@ -57,14 +62,12 @@ export default function AdminDashboard() {
   }, [router]);
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, md: 4 }, minHeight: '100vh' }}>
-        
+
         {/* HEADER */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box className="fade-up" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Box>
-            <Typography variant="h4" fontWeight="bold" color="primary">Command Center</Typography>
+            <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Command Center</Typography>
             <Typography variant="body2" color="text.secondary">Live Telemetry, Progress & Clinical Outcomes</Typography>
           </Box>
           <Button startIcon={<ArrowBack />} onClick={() => router.push('/dashboard')} variant="outlined">
@@ -73,8 +76,8 @@ export default function AdminDashboard() {
         </Box>
 
         {/* NAVIGATION TABS */}
-        <Paper elevation={0} sx={{ border: '1px solid #27272a', borderRadius: 2, overflow: 'hidden' }}>
-          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="fullWidth" sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#0f0f13' }}>
+        <Paper elevation={0} sx={{ ...fx.glassCard, borderRadius: '20px', overflow: 'hidden' }}>
+          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="fullWidth" sx={{ borderBottom: `1px solid ${tokens.border}`, bgcolor: 'rgba(255,255,255,0.02)' }}>
             <Tab icon={<Speed />} iconPosition="start" label="AI Telemetry" />
             <Tab icon={<MenuBook />} iconPosition="start" label="Lesson Progress" />
             <Tab icon={<Mood />} iconPosition="start" label="Mood Check-Ins" />
@@ -177,6 +180,5 @@ export default function AdminDashboard() {
         </Paper>
 
       </Box>
-    </ThemeProvider>
   );
 }

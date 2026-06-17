@@ -4,7 +4,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 🌉 This talks directly to your Python FastAPI server
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
     const backendRes = await fetch(`${backendUrl}/api/login`, {
