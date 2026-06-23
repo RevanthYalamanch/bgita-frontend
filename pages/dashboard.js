@@ -9,24 +9,30 @@ import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, Arrow
 import { fx, tokens } from '../lib/theme';
 
 // 🗂️ Import your new curriculum database!
-import { LESSON_DATA } from '../data/curriculum';
+import { LESSON_DATA, TRACKS } from '../data/curriculum';
 
 
-//Distortion Labeler Concept
-/*const [selectedDistortions, setSelectedDistortions] = useState([]);
+// Serialize a lesson's structured exercise answers into the plain-text
+// `exercise_data` the backend stores. Handles both the "fields" and "chips"
+// exercise types.
+function formatExerciseAnswers(lesson, answers) {
+  const ex = lesson && lesson.exercise;
+  if (!ex) return '';
+  const lines = [ex.title];
+  if (ex.type === 'chips') {
+    const selected = answers._selected || [];
+    lines.push(`Traps: ${selected.length ? selected.join(', ') : '(none selected)'}`);
+    if (answers.notes) lines.push(`Notes: ${answers.notes}`);
+  } else {
+    (ex.fields || []).forEach(f => {
+      lines.push(`${f.label}: ${answers[f.key] || ''}`);
+    });
+  }
+  return lines.join('\n');
+}
 
-const toggleDistortion = (distortion) => {
-  setSelectedDistortions(prev => 
-    prev.includes(distortion) 
-      ? prev.filter(d => d !== distortion) 
-      : [...prev, distortion]
-  );
-  // Also save it to the exerciseData so the backend gets it!
-  setExerciseData(`Selected Distortions: ${selectedDistortions.join(', ')}`);
-}; */
-
-// Convert the UI's message list into the Claude history format the backend
-// expects. The UI uses role 'ai'; Claude expects 'assistant'.
+// Convert the UI's message list into the history format the backend expects.
+// The UI uses role 'ai'; the model API expects 'assistant'.
 function toHistory(messages) {
   return messages.map(m => ({
     role: m.role === 'ai' ? 'assistant' : 'user',
@@ -196,11 +202,6 @@ export default function Dashboard() {
   const [diaryText, setDiaryText] = useState('');
   const [diarySaved, setDiarySaved] = useState(false);
 
-  // 📖 LESSON CHAT STATE
-  const [lessonChatInput, setLessonChatInput] = useState('');
-  const [isLessonChatLoading, setIsLessonChatLoading] = useState(false);
-  const [lessonChatMessages, setLessonChatMessages] = useState([]);
-
   // General Chat State
   const [chatInput, setChatInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -209,8 +210,8 @@ export default function Dashboard() {
   // 📖 LESSON WIZARD STATE
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [activeLesson, setActiveLesson] = useState(null); // Which lesson is open?
-  const [activeStep, setActiveStep] = useState(0); // 0: Concept, 1: Chat, 2: Exercise, 3: Blueprint
-  const [exerciseData, setExerciseData] = useState('');
+  const [activeStep, setActiveStep] = useState(0); // 0: Learn, 1: Practice, 2: Commit
+  const [exerciseAnswers, setExerciseAnswers] = useState({}); // structured exercise inputs
   const [blueprintData, setBlueprintData] = useState('');
 
   // 🚀 ON PAGE LOAD: GET THE NAME
@@ -228,6 +229,13 @@ export default function Dashboard() {
       ]);
     } else {
       setUserName('Guest');
+    }
+
+    // Restore lesson unlock progress so it survives a refresh. Completions are
+    // also recorded server-side; this is the client-side mirror for the UI.
+    const savedLevel = parseInt(localStorage.getItem('unlockedLevel'), 10);
+    if (Number.isFinite(savedLevel) && savedLevel > 1) {
+      setUnlockedLevel(savedLevel);
     }
   }, []);
 
@@ -306,45 +314,27 @@ const handleSendMessage = async (textArg) => {
     }
   };
 
-  const handleLessonSendMessage = async () => {
-    if (!lessonChatInput.trim() || !activeLesson) return;
-    const userText = lessonChatInput;
-    setLessonChatInput('');
-    const history = toHistory(lessonChatMessages);
-    setLessonChatMessages(prev => [...prev, { role: 'user', content: userText }]);
-    setIsLessonChatLoading(true);
-
-    // 🛡️ SAFE EXTRACTION: Grab the email safely before hitting the network
-    const userString = localStorage.getItem('user');
-    const userEmail = userString ? JSON.parse(userString).email : "unknown_user";
-
-    try {
-      const response = await fetch(`/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userText,
-          context: activeLesson.ai_prompt_context,
-          session_id: sessionId,
-          email: userEmail, // 👈 Use the safe variable here
-          history,
-        }),
-      });
-      await streamInto(response, setLessonChatMessages);
-    } catch (error) {
-      setLessonChatMessages(prev => [...prev, { role: 'ai', content: "Network error." }]);
-    } finally {
-      setIsLessonChatLoading(false);
-    }
-  };
-
   const startLesson = (lesson) => {
     setActiveLesson(lesson);
     setActiveStep(0);
-    setExerciseData('');
+    setExerciseAnswers({});
     setBlueprintData('');
-    // Give the AI a custom opening line based on the module!
-    setLessonChatMessages([{ role: 'ai', content: `Welcome to Module ${lesson.id}. I am ready to guide you through this concept. What are your initial thoughts?` }]);
+  };
+
+  // Update one structured exercise field by key.
+  const setExerciseField = (key, value) => {
+    setExerciseAnswers(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Toggle a "chips" exercise option in/out of the selected set.
+  const toggleExerciseChip = (option) => {
+    setExerciseAnswers(prev => {
+      const selected = prev._selected || [];
+      const next = selected.includes(option)
+        ? selected.filter(o => o !== option)
+        : [...selected, option];
+      return { ...prev, _selected: next };
+    });
   };
 
 
@@ -367,7 +357,7 @@ const handleSendMessage = async (textArg) => {
         },
         body: JSON.stringify({
           lesson_id: activeLesson.id,
-          exercise_data: exerciseData,
+          exercise_data: formatExerciseAnswers(activeLesson, exerciseAnswers),
           blueprint_data: blueprintData
         })
       });
@@ -377,8 +367,13 @@ const handleSendMessage = async (textArg) => {
         return;
       }
 
-      // 3. Close the wizard and unlock the next level!
-      setUnlockedLevel(prev => Math.max(prev, activeLesson.id + 1));
+      // 3. Close the wizard and unlock the next level (persisted so it
+      //    survives a page refresh).
+      setUnlockedLevel(prev => {
+        const next = Math.max(prev, activeLesson.id + 1);
+        localStorage.setItem('unlockedLevel', String(next));
+        return next;
+      });
       setActiveLesson(null);
       setActiveStep(0);
 
@@ -388,10 +383,6 @@ const handleSendMessage = async (textArg) => {
     }
   };
 
-  // The Lifeline Feature
-  const handleStuck = () => {
-    setLessonChatInput("I'm not sure how to answer that. Can you rephrase the question or give me a multiple-choice hint?");
-  };
 
   return (
       <Box sx={{ maxWidth: 1000, mx: 'auto', p: { xs: 2, md: 4 }, height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -550,44 +541,61 @@ const handleSendMessage = async (textArg) => {
                   sx={{ mb: 3 }}
                 />
                 <Box>
-                  {LESSON_DATA.map((lesson) => {
-                    const isUnlocked = lesson.id <= unlockedLevel;
-                    const isCurrent = lesson.id === unlockedLevel;
-                    const isDone = lesson.id < unlockedLevel;
+                  {TRACKS.map((track, trackIndex) => {
+                    const trackLessons = LESSON_DATA.filter((l) => l.modality === track.id);
+                    if (trackLessons.length === 0) return null;
                     return (
-                      <Paper
-                        key={lesson.id}
-                        elevation={0}
-                        sx={{
-                          p: 2.5, mb: 1.5, display: 'flex', alignItems: 'center', gap: 2,
-                          borderRadius: '16px',
-                          border: `1px solid ${isCurrent ? tokens.teal : tokens.border}`,
-                          background: isCurrent ? 'rgba(45,212,191,0.07)' : 'rgba(255,255,255,0.02)',
-                          boxShadow: isCurrent ? fx.glow : 'none',
-                          opacity: isUnlocked ? 1 : 0.55,
-                          transition: 'all .2s ease',
-                          '&:hover': isUnlocked ? { borderColor: tokens.borderStrong, transform: 'translateY(-1px)' } : {},
-                        }}
-                      >
-                        {/* Status badge */}
-                        <Box sx={{
-                          width: 40, height: 40, flexShrink: 0, borderRadius: '12px', display: 'grid', placeItems: 'center', fontWeight: 800,
-                          background: isDone ? fx.tealGradient : (isCurrent ? 'rgba(45,212,191,0.15)' : 'rgba(255,255,255,0.05)'),
-                          color: isDone ? '#04141A' : (isCurrent ? tokens.tealLight : 'text.secondary'),
-                          border: `1px solid ${isCurrent && !isDone ? tokens.teal : tokens.border}`,
-                        }}>
-                          {!isUnlocked ? <Lock fontSize="small" /> : (isDone ? <CheckCircle fontSize="small" /> : lesson.id)}
+                      <Box key={track.id} sx={{ mb: 4 }}>
+                        {/* Track header */}
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 0.5, mt: trackIndex === 0 ? 0 : 1 }}>
+                          <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 800, letterSpacing: 1.5 }}>
+                            {track.id === 'CAPSTONE' ? 'Finale' : `Track ${trackIndex + 1}`}
+                          </Typography>
+                          <Typography variant="subtitle1" fontWeight={800}>{track.title}</Typography>
                         </Box>
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>{lesson.title}</Typography>
-                          <Typography variant="caption" color="text.secondary">Module {lesson.id}{isCurrent ? ' · Up next' : (isDone ? ' · Completed' : '')}</Typography>
-                        </Box>
-                        {isUnlocked && (
-                          <Button variant={isCurrent ? 'contained' : 'outlined'} color="primary" onClick={() => startLesson(lesson)} sx={{ flexShrink: 0 }}>
-                            {isCurrent ? 'Start' : 'Review'}
-                          </Button>
-                        )}
-                      </Paper>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{track.blurb}</Typography>
+
+                        {trackLessons.map((lesson) => {
+                          const isUnlocked = lesson.id <= unlockedLevel;
+                          const isCurrent = lesson.id === unlockedLevel;
+                          const isDone = lesson.id < unlockedLevel;
+                          return (
+                            <Paper
+                              key={lesson.id}
+                              elevation={0}
+                              sx={{
+                                p: 2.5, mb: 1.5, display: 'flex', alignItems: 'center', gap: 2,
+                                borderRadius: '16px',
+                                border: `1px solid ${isCurrent ? tokens.teal : tokens.border}`,
+                                background: isCurrent ? 'rgba(45,212,191,0.07)' : 'rgba(255,255,255,0.02)',
+                                boxShadow: isCurrent ? fx.glow : 'none',
+                                opacity: isUnlocked ? 1 : 0.55,
+                                transition: 'all .2s ease',
+                                '&:hover': isUnlocked ? { borderColor: tokens.borderStrong, transform: 'translateY(-1px)' } : {},
+                              }}
+                            >
+                              {/* Status badge */}
+                              <Box sx={{
+                                width: 40, height: 40, flexShrink: 0, borderRadius: '12px', display: 'grid', placeItems: 'center', fontWeight: 800,
+                                background: isDone ? fx.tealGradient : (isCurrent ? 'rgba(45,212,191,0.15)' : 'rgba(255,255,255,0.05)'),
+                                color: isDone ? '#04141A' : (isCurrent ? tokens.tealLight : 'text.secondary'),
+                                border: `1px solid ${isCurrent && !isDone ? tokens.teal : tokens.border}`,
+                              }}>
+                                {!isUnlocked ? <Lock fontSize="small" /> : (isDone ? <CheckCircle fontSize="small" /> : lesson.id)}
+                              </Box>
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>{lesson.title}</Typography>
+                                <Typography variant="caption" color="text.secondary">{lesson.skill}{isCurrent ? ' · Up next' : (isDone ? ' · Completed' : '')}</Typography>
+                              </Box>
+                              {isUnlocked && (
+                                <Button variant={isCurrent ? 'contained' : 'outlined'} color="primary" onClick={() => startLesson(lesson)} sx={{ flexShrink: 0 }}>
+                                  {isCurrent ? 'Start' : 'Review'}
+                                </Button>
+                              )}
+                            </Paper>
+                          );
+                        })}
+                      </Box>
                     );
                   })}
                 </Box>
@@ -609,13 +617,21 @@ const handleSendMessage = async (textArg) => {
                     Exit Lesson
                   </Button>
                   
+                  {(() => {
+                    const track = TRACKS.find((t) => t.id === activeLesson.modality);
+                    return track ? (
+                      <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 800, letterSpacing: 1.5, display: 'block', mb: 0.5 }}>
+                        {track.title}
+                      </Typography>
+                    ) : null;
+                  })()}
                   <Typography variant="h5" fontWeight="bold">
                     Module {activeLesson.id}: {activeLesson.title}
                   </Typography>
                   
                   {/* 👆 The new nonLinear interactive Stepper */}
                   <Stepper nonLinear activeStep={activeStep} sx={{ mt: 3 }}>
-                    {['Concept', 'Dialogue', 'Exercise', 'Blueprint'].map((label, index) => (
+                    {['Learn', 'Practice', 'Commit'].map((label, index) => (
                       <Step key={label}>
                         <StepButton color="inherit" onClick={() => setActiveStep(index)}>
                           {label}
@@ -629,115 +645,131 @@ const handleSendMessage = async (textArg) => {
                 {/* Wizard Content Area */}
                 <Box sx={{ flex: 1, p: 4, overflowY: 'auto' }}>
                   
+                  {/* STEP 0 — LEARN: Gita anchor + concept */}
                   {activeStep === 0 && (
-                    <Box>
-                      <Typography variant="h6" color="primary" mb={2}>1. The Concept</Typography>
-                      <Typography variant="body1" sx={{ fontSize: '1.1rem', lineHeight: 1.8 }}>
-                        {activeLesson.concept_reading}
+                    <Box sx={{ maxWidth: 720 }}>
+                      <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
+                        {activeLesson.skill}
                       </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.4, mt: 0.5, mb: 1 }}>
+                        {activeLesson.concept.hook}
+                      </Typography>
+                      {activeLesson.objective && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                          Goal: {activeLesson.objective}
+                        </Typography>
+                      )}
+
+                      {/* Gita anchor callout */}
+                      <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: '14px', background: 'rgba(255,255,255,0.04)', borderLeft: `3px solid ${tokens.primary || '#2DD4BF'}` }}>
+                        <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                          {activeLesson.gita_anchor.ref}
+                        </Typography>
+                        <Typography variant="body1" sx={{ mt: 1, lineHeight: 1.7, fontStyle: 'italic' }}>
+                          {activeLesson.gita_anchor.teaching}
+                        </Typography>
+                      </Paper>
+
+                      {/* CBT translation */}
+                      <Box sx={{ fontSize: '1.05rem', lineHeight: 1.8, mb: 3 }}>
+                        <MarkdownText content={activeLesson.concept.bridge} />
+                      </Box>
+
+                      {/* Worked example */}
+                      <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                          In practice
+                        </Typography>
+                        <Box sx={{ mt: 1, lineHeight: 1.7 }}>
+                          <MarkdownText content={activeLesson.concept.example} />
+                        </Box>
+                      </Paper>
                     </Box>
                   )}
 
-                  {activeStep === 1 && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '450px' }}>
-                      <Typography variant="h6" color="primary" mb={2}>2. Socratic Dialogue</Typography>
-                      <Alert severity="info" sx={{ mb: 2 }}>
-                        Your AI guide is instructed specifically on Module {activeLesson.id}. Discuss how this concept applies to your life.
-                      </Alert>
-                      
-                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                        <Chip 
-                          icon={<HelpOutline />} 
-                          label="I'm stuck" 
-                          onClick={handleStuck}
-                          clickable 
-                          color="warning" 
-                          variant="outlined"
-                        />
-                      </Box>
+                  {/* STEP 1 — PRACTICE: structured typed exercise */}
+                  {activeStep === 1 && activeLesson.exercise && (
+                    <Box sx={{ maxWidth: 720 }}>
+                      <Typography variant="h6" color="primary" mb={1}>{activeLesson.exercise.title}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line', lineHeight: 1.7, mb: 3 }}>
+                        {activeLesson.exercise.instructions}
+                      </Typography>
 
-                      {/* Lesson Chat Transcript */}
-                      <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, my: 1, pr: 1 }}>
-                        {lessonChatMessages.map((msg, index) => (
-                          <Box key={index} sx={{ display: 'flex', gap: 2, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
-                            <Avatar sx={{ background: msg.role === 'user' ? 'rgba(255,255,255,0.08)' : fx.tealGradient, color: msg.role === 'user' ? 'text.primary' : '#04141A', width: 32, height: 32, fontSize: 16 }}>{msg.role === 'user' ? '👤' : '🧠'}</Avatar>
-                            <Paper elevation={0} sx={{ p: 1.5, border: 'none', background: msg.role === 'user' ? fx.tealGradient : 'rgba(255,255,255,0.05)', color: msg.role === 'user' ? '#04141A' : 'text.primary', maxWidth: '80%', borderRadius: '14px' }}>
-                              {msg.role === 'user'
-                                ? <Typography sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
-                                : <MarkdownText content={msg.content} />}
-                            </Paper>
+                      {/* Labeled-fields exercise */}
+                      {activeLesson.exercise.type === 'fields' && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                          {activeLesson.exercise.fields.map((f) => (
+                            <Box key={f.key}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.75 }}>{f.label}</Typography>
+                              <TextField
+                                fullWidth
+                                multiline
+                                minRows={2}
+                                placeholder={f.placeholder || ''}
+                                variant="outlined"
+                                value={exerciseAnswers[f.key] || ''}
+                                onChange={(e) => setExerciseField(f.key, e.target.value)}
+                                inputProps={{ maxLength: 2000 }}
+                              />
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+
+                      {/* Chip-select exercise */}
+                      {activeLesson.exercise.type === 'chips' && (
+                        <Box>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25, mb: 3 }}>
+                            {activeLesson.exercise.options.map((opt) => {
+                              const selected = (exerciseAnswers._selected || []).includes(opt);
+                              return (
+                                <Chip
+                                  key={opt}
+                                  label={opt}
+                                  clickable
+                                  onClick={() => toggleExerciseChip(opt)}
+                                  color={selected ? 'primary' : 'default'}
+                                  variant={selected ? 'filled' : 'outlined'}
+                                  sx={{ py: 2, fontSize: '0.9rem' }}
+                                />
+                              );
+                            })}
                           </Box>
-                        ))}
-                        {isLessonChatLoading && <TypingIndicator small />}
-                      </Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.75 }}>
+                            {activeLesson.exercise.notesLabel || 'Notes'}
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            multiline
+                            minRows={3}
+                            variant="outlined"
+                            value={exerciseAnswers.notes || ''}
+                            onChange={(e) => setExerciseField('notes', e.target.value)}
+                            inputProps={{ maxLength: 2000 }}
+                          />
+                        </Box>
+                      )}
 
-                      {/* Lesson Chat Input */}
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <TextField fullWidth placeholder="Discuss the lesson..." variant="outlined" size="small" value={lessonChatInput} onChange={(e) => setLessonChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLessonSendMessage()} inputProps={{ maxLength: 4000 }} />
-                        <Button variant="contained" onClick={handleLessonSendMessage} disabled={isLessonChatLoading}>Send</Button>
-                      </Box>
+                      {/* Safety note — gentle guardrail tied to this exercise */}
+                      {activeLesson.safety_note && (
+                        <Paper elevation={0} sx={{ mt: 3, p: 2, borderRadius: '12px', display: 'flex', gap: 1.25, background: 'rgba(255,255,255,0.03)', border: `1px solid ${tokens.border}` }}>
+                          <HelpOutline fontSize="small" sx={{ color: 'text.secondary', mt: '2px', flexShrink: 0 }} />
+                          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                            {activeLesson.safety_note}
+                          </Typography>
+                        </Paper>
+                      )}
                     </Box>
                   )}
 
-
+                  {/* STEP 2 — COMMIT: reflection */}
                   {activeStep === 2 && (
-                    <Box>
-                      <Typography variant="h6" color="primary" mb={2}>3. Active Exercise: {activeLesson.exercise_type.replace(/_/g, ' ')}</Typography>
-                      <Typography variant="body2" color="text.secondary" mb={3}>Complete the required cognitive behavioral exercise below.</Typography>
-                      <TextField fullWidth multiline rows={8} placeholder="Begin your exercise here..." variant="outlined" value={exerciseData} onChange={(e) => setExerciseData(e.target.value)} />
-                    </Box>
-                  )}
-
-                  {/* cognitive distortion concept*/}
-                  {/*activeStep === 2 && (
-  <Box>
-    <Typography variant="h6" color="primary" mb={2}>3. Active Exercise: Label the Distortion</Typography>
-    <Typography variant="body2" color="text.secondary" mb={3}>
-      Review the negative thought you just discussed. Which "Thinking Traps" is your brain falling into right now? Click all that apply.
-    </Typography>
-    
-    
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 4, p: 3, bgcolor: '#18181b', borderRadius: 2, border: '1px solid #27272a' }}>
-      {[
-        "Catastrophizing (Expecting the worst)", 
-        "All-or-Nothing (Black and white thinking)", 
-        "Mind Reading (Assuming what others think)", 
-        "Fortune Telling (Predicting the future)", 
-        "Emotional Reasoning (I feel it, so it's true)",
-        "Should Statements (Strict rules for yourself)",
-        "Personalization (Blaming yourself for everything)"
-      ].map((distortion) => (
-        <Chip 
-          key={distortion}
-          label={distortion}
-          onClick={() => toggleDistortion(distortion)}
-          color={selectedDistortions.includes(distortion) ? "primary" : "default"}
-          variant={selectedDistortions.includes(distortion) ? "filled" : "outlined"}
-          sx={{ py: 2.5, px: 1, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
-        />
-      ))}
-    </Box>
-
-    <TextField 
-      fullWidth 
-      multiline 
-      rows={3} 
-      placeholder="Optional: Why did you pick these specific labels?" 
-      variant="outlined" 
-      onChange={(e) => setExerciseData(`Distortions: ${selectedDistortions.join(', ')} | Notes: ${e.target.value}`)} 
-    />
-  </Box>
-)*/}
-                
-
-                  
-                  
-
-                  {activeStep === 3 && (
-                    <Box>
-                      <Typography variant="h6" color="primary" mb={2}>4. The Blueprint</Typography>
-                      <Typography variant="body1" mb={3} fontWeight="bold">{activeLesson.reflection_prompt}</Typography>
-                      <TextField fullWidth multiline rows={4} placeholder="Your actionable intention..." variant="outlined" value={blueprintData} onChange={(e) => setBlueprintData(e.target.value)} />
+                    <Box sx={{ maxWidth: 720 }}>
+                      <Typography variant="h6" color="primary" mb={2}>Your takeaway</Typography>
+                      <Typography variant="body1" mb={3} fontWeight={600} sx={{ lineHeight: 1.6 }}>
+                        {activeLesson.reflection_prompt}
+                      </Typography>
+                      <TextField fullWidth multiline rows={4} placeholder="Write your intention…" variant="outlined" value={blueprintData} onChange={(e) => setBlueprintData(e.target.value)} inputProps={{ maxLength: 2000 }} />
                     </Box>
                   )}
 
@@ -747,8 +779,8 @@ const handleSendMessage = async (textArg) => {
                 <Box sx={{ p: 2, borderTop: `1px solid ${tokens.border}`, display: 'flex', justifyContent: 'space-between', bgcolor: 'rgba(255,255,255,0.02)' }}>
                   <Button disabled={activeStep === 0} onClick={() => setActiveStep(prev => prev - 1)}>Previous</Button>
                   
-                  {activeStep < 3 ? (
-                    <Button variant="contained" endIcon={<ArrowForward />} onClick={() => setActiveStep(prev => prev + 1)}>Next Phase</Button>
+                  {activeStep < 2 ? (
+                    <Button variant="contained" endIcon={<ArrowForward />} onClick={() => setActiveStep(prev => prev + 1)}>Next</Button>
                   ) : (
                     <Button variant="contained" color="success" endIcon={<CheckCircle />} onClick={finishLesson} disabled={!blueprintData}>Complete Module</Button>
                   )}
