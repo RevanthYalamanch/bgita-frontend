@@ -231,11 +231,30 @@ export default function Dashboard() {
       setUserName('Guest');
     }
 
-    // Restore lesson unlock progress so it survives a refresh. Completions are
-    // also recorded server-side; this is the client-side mirror for the UI.
+    // Restore lesson unlock progress so it survives a refresh. The localStorage
+    // value is an instant offline mirror; the backend is the source of truth and
+    // overrides it below (so progress syncs across devices).
     const savedLevel = parseInt(localStorage.getItem('unlockedLevel'), 10);
     if (Number.isFinite(savedLevel) && savedLevel > 1) {
       setUnlockedLevel(savedLevel);
+    }
+
+    // Pull authoritative progress from the backend. Never regress below what the
+    // local mirror already showed; if the request fails, the mirror stands.
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/lesson/progress', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Number.isFinite(data.unlocked_level)) {
+            setUnlockedLevel((prev) => {
+              const next = Math.max(prev, data.unlocked_level);
+              localStorage.setItem('unlockedLevel', String(next));
+              return next;
+            });
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 
