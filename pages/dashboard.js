@@ -185,8 +185,16 @@ const CHAT_SUGGESTIONS = [
 ];
 
 function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-  return <div hidden={value !== index} {...other}>{value === index && <Box sx={{ p: 3, height: '100%' }}>{children}</Box>}</div>;
+  const { children, value, index, sx } = props;
+  if (value !== index) return null;
+  // Fill the parent (a flex column) and own the scroll. minHeight:0 lets the
+  // inner overflowY:auto regions actually scroll instead of forcing the card
+  // to grow past its container (which clips under the Paper's overflow:hidden).
+  return (
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', p: 3, overflowY: 'auto', ...sx }}>
+      {children}
+    </Box>
+  );
 }
 
 export default function Dashboard() {
@@ -404,7 +412,7 @@ const handleSendMessage = async (textArg) => {
 
 
   return (
-      <Box sx={{ maxWidth: 1000, mx: 'auto', p: { xs: 2, md: 4 }, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ maxWidth: 1000, mx: 'auto', p: { xs: 2, md: 4 }, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
         
         {/* HEADER */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 3 }}>
