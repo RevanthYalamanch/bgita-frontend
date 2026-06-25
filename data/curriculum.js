@@ -70,14 +70,14 @@ export const LESSON_DATA = [
     modality: "CBT",
     mechanism: "cognitive_model_cbt_triangle",
     skill: "The Cognitive Model",
-    title: "Arjuna's Collapse — The Event Isn't the Enemy",
+    title: "The Warrior's Collapse — The Event Isn't the Enemy",
     objective: "See that a situation doesn't directly cause a feeling — the thought wedged in between does.",
     gita_anchor: {
-      ref: "Bhagavad Gita 1.28–30",
-      teaching: "Facing the battlefield, Arjuna's limbs fail, his mouth dries, and his bow slips from his hand. No arrow has been fired. His body collapses under the meaning he gives the moment, not the moment itself."
+      ref: "An ancient story",
+      teaching: "Facing the battlefield, a great warrior feels his limbs go weak, his mouth go dry, and his bow slip from his hand. No arrow has been fired. He collapses under the meaning he gives the moment, not the moment itself."
     },
     concept: {
-      hook: "Arjuna is the greatest archer alive, yet he sinks down unable to act — undone not by the battle, but by the story he tells about it.",
+      hook: "The greatest archer alive sinks down unable to act — undone not by the battle, but by the story he tells about it.",
       bridge: "There's a simple map for this: a **Situation** sparks a **Thought**, the thought drives a **Feeling**, and the feeling shapes a **Behavior**. The situation rarely changes how we feel on its own — the thought in the middle does. Shift that, and the whole chain shifts.",
       example: "A friend doesn't text back. *Situation:* no reply. *Thought:* \"They're done with me.\" *Feeling:* rejected. *Behavior:* you go quiet too. Swap the thought to \"They're probably swamped\" and the feeling and behavior change — same situation."
     },
@@ -94,7 +94,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "If the exact same situation happened to a friend, what's a fairer thought they might have had? Write the one you'll try to reach for next time.",
     safety_note: "This is a tool for everyday upsets, not for working through trauma. If pulling a moment apart brings up overwhelming distress or thoughts of harming yourself, pause and reach out to the 988 Suicide & Crisis Lifeline (call or text 988). It supports self-understanding — it doesn't replace professional care.",
-    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on the cognitive model, anchored in Arjuna's collapse (Gita 1.28–30). Help them separate the bare facts of a recent upsetting event from the interpretation they layered on top. Keep the Gita as a light touchstone and teach in plain, secular language."
+    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on the cognitive model, anchored in the ancient story of a warrior's collapse before battle. Help them separate the bare facts of a recent upsetting event from the interpretation they layered on top. Teach in plain, secular language; do not name the source text or its characters."
   },
   {
     id: 2,
@@ -104,8 +104,8 @@ export const LESSON_DATA = [
     title: "The Restless Mind — Catching Automatic Thoughts",
     objective: "Notice the fast, unquestioned thoughts that fire just before your mood drops.",
     gita_anchor: {
-      ref: "Bhagavad Gita 6.34",
-      teaching: "Arjuna admits the mind is restless, turbulent, powerful, and stubborn — as hard to hold as the wind. Krishna doesn't deny it; he says it can still be trained through steady practice."
+      ref: "An ancient story",
+      teaching: "In the same old story, the warrior admits his mind is restless, turbulent, and stubborn — as hard to hold as the wind. His guide doesn't deny it; he says the mind can still be trained through steady practice."
     },
     concept: {
       hook: "The mind throws off thoughts as fast as wind, and most fly by unexamined — yet we treat them as the plain truth.",
@@ -124,7 +124,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "What's the negative thought that most often pops up automatically when you make a mistake? Name it so you can spot it next time.",
     safety_note: "Noticing hard thoughts can sting. The aim is to observe them, not to judge yourself for having them. If the thoughts turn toward harming yourself, stop the exercise and contact 988 (call or text).",
-    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on catching automatic thoughts, anchored in the restless mind of Gita 6.34. Help them rewind to the thought that fired just before a mood drop and write it verbatim, without judging it yet."
+    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on catching automatic thoughts, anchored in the ancient story's image of the restless mind. Help them rewind to the thought that fired just before a mood drop and write it verbatim, without judging it yet. Keep language plain and secular; do not name the source text or its characters."
   },
   {
     id: 3,
@@ -134,8 +134,8 @@ export const LESSON_DATA = [
     title: "The Clouded Eye — Naming Thinking Traps",
     objective: "Label the specific traps that warp a thought, which loosens their grip.",
     gita_anchor: {
-      ref: "Bhagavad Gita 2.62–63",
-      teaching: "Krishna traces how a churning mind clouds itself: dwelling breeds craving, craving breeds anger, anger breeds confusion, and confusion blurs clear seeing. An agitated mind doesn't see reality — it sees a distortion of it."
+      ref: "An ancient story",
+      teaching: "The old story traces how a churning mind clouds itself: dwelling breeds craving, craving breeds anger, anger breeds confusion, and confusion blurs clear seeing. An agitated mind doesn't see reality — it sees a distortion of it."
     },
     concept: {
       hook: "An agitated mind doesn't show you the world; it shows you a warped picture and swears it's real.",
@@ -160,7 +160,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "Which thinking trap do you fall into most often? Naming your usual one makes it easier to catch in the moment.",
     safety_note: "Naming a thinking trap is about loosening a thought's grip — never about deciding a real, serious problem 'isn't real.' Trust your judgment about genuine danger or mistreatment.",
-    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on thinking traps, anchored in the clouding of the mind in Gita 2.62–63. Briefly explain a few common traps and help them label which a recent thought falls into."
+    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on thinking traps, anchored in the ancient story's account of how an agitated mind clouds itself. Briefly explain a few common traps and help them label which a recent thought falls into. Keep language plain and secular; do not name the source text or its characters."
   },
   {
     id: 4,
@@ -170,8 +170,8 @@ export const LESSON_DATA = [
     title: "The Sword of Discernment — Thoughts on Trial",
     objective: "Weigh a distorted thought against real evidence and build a fairer, balanced one.",
     gita_anchor: {
-      ref: "Bhagavad Gita 2.65–66",
-      teaching: "Krishna teaches that a clear, settled mind dissolves sorrow, while the unsteady mind has no wisdom and no peace. Discernment is the blade that cuts confusion from fact."
+      ref: "An ancient story",
+      teaching: "The old story teaches that a clear, settled mind dissolves sorrow, while an unsteady mind finds neither wisdom nor peace. Discernment is the blade that cuts confusion from fact."
     },
     concept: {
       hook: "Just because you think it doesn't make it true — a thought deserves a trial before you sentence yourself with it.",
@@ -191,7 +191,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "Read your balanced verdict back. How does the feeling change when you hold the fairer thought instead of the original one?",
     safety_note: "Weighing evidence works on distorted thoughts — not on real losses or threats. Some hard things are simply hard, and deserve compassion rather than debate. This isn't a way to argue yourself out of a feeling that's telling you something true.",
-    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on cognitive restructuring, anchored in the discerning mind of Gita 2.65–66. Use Socratic questions to help them weigh evidence for and against a thought and craft a balanced alternative."
+    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on cognitive restructuring, anchored in the ancient story's praise of the discerning, settled mind. Use Socratic questions to help them weigh evidence for and against a thought and craft a balanced alternative. Keep language plain and secular; do not name the source text or its characters."
   },
   {
     id: 5,
@@ -201,8 +201,8 @@ export const LESSON_DATA = [
     title: "Action Over Inertia — Move First, Mood Follows",
     objective: "Act first to lift your mood, instead of waiting for motivation that won't come.",
     gita_anchor: {
-      ref: "Bhagavad Gita 3.8",
-      teaching: "\"Do your allotted work, for action is better than inaction.\" Krishna urges Arjuna out of paralysis: even imperfect action keeps life moving, while sinking into inertia only deepens the fog."
+      ref: "An ancient story",
+      teaching: "Do the work in front of you, the old story urges — action is better than inaction. The warrior is coaxed out of paralysis: even imperfect action keeps life moving, while sinking into inertia only deepens the fog."
     },
     concept: {
       hook: "When we're low, we wait to feel motivated before we act — but with a heavy mind, motivation almost never shows up first.",
@@ -222,7 +222,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "What's the most likely obstacle between you and that 5-minute action — and how will you get past it?",
     safety_note: "Start absurdly small. If even a tiny step feels impossible for a long stretch, that heaviness is worth taking to a professional — these tools support care, they don't replace it.",
-    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on behavioral activation, anchored in Gita 3.8's call to action over inertia. Help them shrink an avoided task to a tiny, scheduled step they'll do regardless of motivation."
+    ai_prompt_context: "User is in the 'Seeing Clearly' track, lesson on behavioral activation, anchored in the ancient story's call to action over inertia. Help them shrink an avoided task to a tiny, scheduled step they'll do regardless of motivation. Keep language plain and secular; do not name the source text or its characters."
   },
 
   // ──────────────────────── TRACK 2 · DBT — Steadying the Storm ────────────────────────
@@ -234,8 +234,8 @@ export const LESSON_DATA = [
     title: "The Steady Center — Meeting Emotion With Balance",
     objective: "Feel an emotion fully without being swept away by it — by finding the steady place between raw feeling and cold logic.",
     gita_anchor: {
-      ref: "Bhagavad Gita 2.56–57",
-      teaching: "The person of steady wisdom, Krishna says, is untroubled in sorrow and not grasping in pleasure — free of clinging and fear. This steadiness isn't coldness; it's meeting joy and grief without being thrown by either."
+      ref: "An ancient story",
+      teaching: "The person of steady wisdom, the old story says, is untroubled in sorrow and not grasping in pleasure — free of clinging and fear. This steadiness isn't coldness; it's meeting joy and grief without being thrown by either."
     },
     concept: {
       hook: "Steadiness isn't feeling nothing — it's feeling something fully and still keeping your feet.",
@@ -256,7 +256,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "Next time a big feeling hits, what's one phrase you'll say to yourself to honor the emotion before you act on it?",
     safety_note: "Steadiness means feeling your emotions, never suppressing or 'rising above' them — pushing feelings down backfires. If an emotion is so intense it feels unbearable or unsafe, that's a moment for real-time support: 988 (call or text), not a worksheet.",
-    ai_prompt_context: "User is in the 'Steadying the Storm' track, lesson on wise mind / emotion regulation, anchored in the steady sage of Gita 2.56–57. ALWAYS validate the emotion first; never suggest suppressing it. Help them find the balance between raw feeling and cold logic."
+    ai_prompt_context: "User is in the 'Steadying the Storm' track, lesson on wise mind / emotion regulation, anchored in the ancient story's portrait of the steady, even-minded person. ALWAYS validate the emotion first; never suggest suppressing it. Help them find the balance between raw feeling and cold logic. Keep language plain and secular; do not name the source text or its characters."
   },
   {
     id: 7,
@@ -266,8 +266,8 @@ export const LESSON_DATA = [
     title: "The Tortoise — Riding Out the Storm",
     objective: "Get through a wave of intense urge or distress without acting on it — and without making it worse.",
     gita_anchor: {
-      ref: "Bhagavad Gita 2.58",
-      teaching: "Krishna offers an image: as a tortoise draws its limbs in from every side, the steady person can draw the senses back from what pulls at them. The urge passes; you don't have to chase it."
+      ref: "An ancient story",
+      teaching: "The old story offers an image: as a tortoise draws its limbs in from every side, a steady person can draw their attention back from whatever pulls at them. The urge passes; you don't have to chase it."
     },
     concept: {
       hook: "Every urge is a wave — it rises, peaks, and falls on its own if you don't feed it.",
@@ -287,7 +287,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "What's the shortest pause you could commit to next time an urge spikes — even 5 minutes — before you decide anything?",
     safety_note: "These tools are for riding out everyday urges and distress — they are NOT a crisis safety plan. If the urge is to harm yourself or someone else, skip the worksheet and reach out now: 988 Suicide & Crisis Lifeline (call or text 988), or text HOME to 741741.",
-    ai_prompt_context: "User is in the 'Steadying the Storm' track, lesson on distress tolerance / urge surfing, anchored in the tortoise of Gita 2.58. Help them build a pause-and-ride-the-wave plan. The deterministic safety layer handles any self-harm content — do not coach crisis planning."
+    ai_prompt_context: "User is in the 'Steadying the Storm' track, lesson on distress tolerance / urge surfing, anchored in the ancient story's image of the tortoise drawing in its limbs. Help them build a pause-and-ride-the-wave plan. Keep language plain and secular; do not name the source text or its characters. The deterministic safety layer handles any self-harm content — do not coach crisis planning."
   },
   {
     id: 8,
@@ -297,8 +297,8 @@ export const LESSON_DATA = [
     title: "The Pairs of Opposites — Accepting What Is",
     objective: "Stop fighting a painful reality you can't change, so your energy goes to what you can do next.",
     gita_anchor: {
-      ref: "Bhagavad Gita 2.14",
-      teaching: "Krishna notes that contact with the world brings cold and heat, pleasure and pain — they arrive and depart, never permanent. His counsel is to meet them with endurance rather than being tossed between them."
+      ref: "An ancient story",
+      teaching: "The old story notes that contact with the world brings cold and heat, pleasure and pain — they arrive and depart, never permanent. Its counsel is to meet them with endurance rather than being tossed between them."
     },
     concept: {
       hook: "Pain is part of life; suffering is the extra we pile on by insisting reality should be otherwise.",
@@ -318,7 +318,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "Where in your life are you spending energy fighting something you can't change — and what would you do with that energy back?",
     safety_note: "Acceptance is for realities you genuinely can't change — never for excusing harm or abuse you could act on or leave. If you're 'accepting' mistreatment because you feel trapped, that's a place for real support, not acceptance: 988, or the National Domestic Violence Hotline at 1-800-799-7233.",
-    ai_prompt_context: "User is in the 'Steadying the Storm' track, lesson on radical acceptance of the pairs of opposites, anchored in Gita 2.14. Stress that acceptance is not approval. Never push acceptance of abuse, or of anything the user can change or leave."
+    ai_prompt_context: "User is in the 'Steadying the Storm' track, lesson on radical acceptance of the pairs of opposites, anchored in the ancient story's teaching that pleasure and pain come and go. Stress that acceptance is not approval. Never push acceptance of abuse, or of anything the user can change or leave. Keep language plain and secular; do not name the source text or its characters."
   },
 
   // ──────────────────────── TRACK 3 · ACT — Living Your Values ────────────────────────
@@ -330,8 +330,8 @@ export const LESSON_DATA = [
     title: "The Fruits of Action — Commit, Then Release",
     objective: "Pour yourself fully into a values-driven action while letting go of the outcome you can't control.",
     gita_anchor: {
-      ref: "Bhagavad Gita 2.47",
-      teaching: "\"You have a right to your actions, but never to the fruits of your actions.\" Give yourself fully to the doing; loosen your grip on the result, which was never entirely yours to command."
+      ref: "An ancient story",
+      teaching: "You have a right to your actions, the old story says, but never to their fruits. Give yourself fully to the doing; loosen your grip on the result, which was never entirely yours to command."
     },
     concept: {
       hook: "You own your effort, not the outcome — and that's oddly freeing, not defeating.",
@@ -351,7 +351,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "What's one action this week you'll commit to fully — measuring yourself by the doing, not the outcome?",
     safety_note: "Releasing the outcome is freedom from what you can't control — not permission to stop caring or to act recklessly. It pairs effort with peace; it never means giving up on your wellbeing or your future.",
-    ai_prompt_context: "User is in the 'Living Your Values' track, the FLAGSHIP committed-action exercise, anchored in Gita 2.47. Help them tie an action to a chosen value, commit to what they control, and release the result. Always frame values as chosen, never assigned."
+    ai_prompt_context: "User is in the 'Living Your Values' track, the FLAGSHIP committed-action exercise, anchored in the ancient story's teaching to give yourself fully to the action and release the result. Help them tie an action to a chosen value, commit to what they control, and release the result. Always frame values as chosen, never assigned. Keep language plain and secular; do not name the source text or its characters."
   },
   {
     id: 10,
@@ -361,8 +361,8 @@ export const LESSON_DATA = [
     title: "The Witness — The You That Watches",
     objective: "Notice the steady part of you that observes your thoughts and feelings — and isn't shaken by them.",
     gita_anchor: {
-      ref: "Bhagavad Gita 13.1–2",
-      teaching: "Krishna draws a distinction between the changing field — the body, the mind, and its passing states — and the quiet one who knows it, the observer within. Thoughts and moods are the weather; something in you watches the weather."
+      ref: "An ancient story",
+      teaching: "The old story draws a distinction between the changing field — the body, the mind, and its passing states — and the quiet one who knows it, the observer within. Thoughts and moods are the weather; something in you watches the weather."
     },
     concept: {
       hook: "Thoughts and feelings come and go all day — but the *you* that notices them stays the same.",
@@ -381,7 +381,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "When a strong thought claims to be the whole truth about you, what reminder will help you step back into the part that's just watching?",
     safety_note: "The observing self is a practical way to get distance from painful thoughts — not a claim that your feelings aren't real or don't matter. If stepping back tips into feeling numb, detached, or unreal for long stretches, mention it to a professional.",
-    ai_prompt_context: "User is in the 'Living Your Values' track, lesson on the observing self, anchored in field-and-knower of Gita 13. STRIP all metaphysics — present this as a practical stance, never a soul claim. Help them experience the watcher behind the thought."
+    ai_prompt_context: "User is in the 'Living Your Values' track, lesson on the observing self, anchored in the ancient story's distinction between the changing mind and the quiet observer within. STRIP all metaphysics — present this as a practical stance, never a soul claim. Help them experience the watcher behind the thought. Keep language plain and secular; do not name the source text or its characters."
   },
   {
     id: 11,
@@ -391,8 +391,8 @@ export const LESSON_DATA = [
     title: "Unhooking — You Are Not Your Thoughts",
     objective: "Loosen a sticky thought's grip by changing your relationship to it — without having to argue it away.",
     gita_anchor: {
-      ref: "Bhagavad Gita 6.35",
-      teaching: "When Arjuna calls the mind restless and hard to hold, Krishna agrees — and says it can still be steadied through practice and a lighter grip. You don't have to win against the mind; you can learn to hold its thoughts loosely."
+      ref: "An ancient story",
+      teaching: "When the warrior calls the mind restless and hard to hold, his guide agrees — and says it can still be steadied through practice and a lighter grip. You don't have to win against the mind; you can learn to hold its thoughts loosely."
     },
     concept: {
       hook: "A thought only runs you when you're hooked to it — loosen the grip and it's just words passing through.",
@@ -412,7 +412,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "Which thought hooks you most often — and which unhooking move will you keep in your pocket for it?",
     safety_note: "Unhooking changes your relationship to a thought; it doesn't mean ignoring real problems that need action. And it's never for brushing off thoughts of harming yourself — those call for real support: 988 (call or text).",
-    ai_prompt_context: "User is in the 'Living Your Values' track, lesson on cognitive defusion, anchored in Gita 6.35. Help them change their relationship to a thought (label it, thank the mind, hold it lightly) rather than debating its truth. Never use the thought to dismiss self-harm signals."
+    ai_prompt_context: "User is in the 'Living Your Values' track, lesson on cognitive defusion, anchored in the ancient story's counsel to steady the restless mind with a lighter grip. Help them change their relationship to a thought (label it, thank the mind, hold it lightly) rather than debating its truth. Keep language plain and secular; do not name the source text or its characters. Never use the thought to dismiss self-harm signals."
   },
   {
     id: 12,
@@ -422,8 +422,8 @@ export const LESSON_DATA = [
     title: "Your Own Path — Living by Your Values",
     objective: "Name the values that are truly yours, and take one concrete step to live by them this week.",
     gita_anchor: {
-      ref: "Bhagavad Gita 18.47",
-      teaching: "\"Better is one's own path, though imperfect, than another's path well-walked.\" The point: a life built on borrowed expectations rings hollow, while a life that's authentically yours — flaws and all — is the one worth living."
+      ref: "An ancient story",
+      teaching: "Better your own path, though imperfect, than another's walked to perfection — so the old story goes. A life built on borrowed expectations rings hollow, while a life that's authentically yours — flaws and all — is the one worth living."
     },
     concept: {
       hook: "A flawed life that's truly yours beats a polished one you're living for everyone else.",
@@ -443,7 +443,7 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "If you lived one value more fully starting tomorrow, which would change your days the most — and what's the first small move?",
     safety_note: "Your values are yours to choose — never a fixed role, duty, or fate handed to you by family, culture, or anyone else. If naming what you want surfaces grief about how far life has drifted, that's worth sharing with someone you trust or a professional.",
-    ai_prompt_context: "User is in the 'Living Your Values' track, the CAPSTONE values-clarification exercise, anchored in svadharma of Gita 18.47. ALWAYS frame values as freely chosen directions, never assigned roles or fate. Help them pick authentic values and one concrete committed step."
+    ai_prompt_context: "User is in the 'Living Your Values' track, the CAPSTONE values-clarification exercise, anchored in the ancient story's idea that your own imperfect path beats a borrowed one. ALWAYS frame values as freely chosen directions, never assigned roles or fate. Help them pick authentic values and one concrete committed step. Keep language plain and secular; do not name the source text or its characters."
   },
 
   // ──────────────────────── CAPSTONE · Bringing It Together ────────────────────────
@@ -455,8 +455,8 @@ export const LESSON_DATA = [
     title: "Equipoise — Your Wellbeing Blueprint",
     objective: "Build a personal plan to steady yourself faster the next time your wellbeing dips — drawing on every skill in this course.",
     gita_anchor: {
-      ref: "Bhagavad Gita 2.48",
-      teaching: "\"Steady in yourself, do your work, letting go of attachment, even-minded in success and failure — for evenness of mind is the heart of it.\" The goal was never a life without storms; it's a steadiness that keeps returning."
+      ref: "An ancient story",
+      teaching: "Steady in yourself, do your work, letting go of attachment, even-minded in success and failure — for evenness of mind is the heart of it. The goal was never a life without storms; it's a steadiness that keeps returning."
     },
     concept: {
       hook: "Wellbeing isn't never falling — it's knowing exactly how to get back up, faster, each time you do.",
@@ -477,6 +477,6 @@ export const LESSON_DATA = [
     },
     reflection_prompt: "The next time your wellbeing dips, what are the three non-negotiable moves you'll make to steady yourself — one from each track?",
     safety_note: "This blueprint is for everyday dips, not for crisis moments. It is NOT a clinical safety plan. If you ever feel unsafe or have thoughts of harming yourself, your first move is real support, not a worksheet: 988 Suicide & Crisis Lifeline (call or text 988), or text HOME to 741741. These tools work alongside professional care — they don't replace it.",
-    ai_prompt_context: "User is in the CAPSTONE lesson: a personal wellbeing plan (relapse prevention), anchored in evenness of mind (Gita 2.48). Congratulate them on finishing the course. Help them turn triggers and warning signs into a concrete plan that draws one move from each of the three tracks. Be explicit that this is not a crisis safety plan."
+    ai_prompt_context: "User is in the CAPSTONE lesson: a personal wellbeing plan (relapse prevention), anchored in the ancient story's ideal of evenness of mind. Congratulate them on finishing the course. Help them turn triggers and warning signs into a concrete plan that draws one move from each of the three tracks. Keep language plain and secular; do not name the source text or its characters. Be explicit that this is not a crisis safety plan."
   }
 ];

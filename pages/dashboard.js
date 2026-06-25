@@ -5,7 +5,7 @@ import {
   Typography, Button, TextField, Paper, Avatar, Alert,
   Stepper, Step, StepLabel, StepButton, Divider, Chip, Link, LinearProgress // 👈 Added Chip, Link, LinearProgress
 } from '@mui/material';
-import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline } from '@mui/icons-material'; // 👈 Added HelpOutline
+import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome } from '@mui/icons-material'; // 👈 Added HelpOutline, AutoAwesome
 import { fx, tokens } from '../lib/theme';
 
 // 🗂️ Import your new curriculum database!
@@ -77,6 +77,31 @@ async function streamInto(response, setMessages) {
       next[next.length - 1] = { role: 'ai', content: acc };
       return next;
     });
+  }
+}
+
+// Read a streaming text/plain response into a single string state (used by the
+// lesson "Practice" reflection, which renders one growing block rather than a
+// chat list). Returns nothing; calls setText with the accumulated text.
+async function streamIntoText(response, setText) {
+  if (!response.ok) {
+    let msg = "Sorry, I couldn't put together a reflection just now. You can still continue to the next step.";
+    if (response.status === 429) msg = "You're going a little fast — wait a moment, then try again.";
+    setText(msg);
+    return;
+  }
+  if (!response.body) {
+    setText(await response.text());
+    return;
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let acc = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    acc += decoder.decode(value, { stream: true });
+    setText(acc);
   }
 }
 
@@ -221,6 +246,14 @@ export default function Dashboard() {
   const [activeStep, setActiveStep] = useState(0); // 0: Learn, 1: Practice, 2: Commit
   const [exerciseAnswers, setExerciseAnswers] = useState({}); // structured exercise inputs
   const [blueprintData, setBlueprintData] = useState('');
+  // Map of lesson_id → saved {exercise_data, blueprint_data} from the backend, so
+  // a user can see their previous responses and pick up where they left off on a redo.
+  const [savedAnswers, setSavedAnswers] = useState({});
+  // Brief success confirmation shown on the lessons list after a module is completed.
+  const [completedBanner, setCompletedBanner] = useState('');
+  // AI reflection on the Practice-step answers (#4): streamed text + loading flag.
+  const [analysisText, setAnalysisText] = useState('');
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   // 🚀 ON PAGE LOAD: GET THE NAME
   useEffect(() => {
@@ -261,6 +294,15 @@ export default function Dashboard() {
               return next;
             });
           }
+        })
+        .catch(() => {});
+
+      // Pull saved lesson answers so reviewing/redoing a lesson shows what the
+      // user wrote last time (#3).
+      fetch('/api/lesson/answers', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && data.answers) setSavedAnswers(data.answers);
         })
         .catch(() => {});
     }
@@ -344,8 +386,35 @@ const handleSendMessage = async (textArg) => {
   const startLesson = (lesson) => {
     setActiveLesson(lesson);
     setActiveStep(0);
-    setExerciseAnswers({});
-    setBlueprintData('');
+    setAnalysisText('');
+
+    // Pre-fill with the user's previous response (if any) so reviewing/redoing a
+    // lesson shows what they wrote before instead of a blank slate (#3).
+    const saved = savedAnswers[String(lesson.id)];
+    let priorAnswers = {};
+    if (saved && saved.exercise_data) {
+      try {
+        const parsed = JSON.parse(saved.exercise_data);
+        if (parsed && typeof parsed === 'object') priorAnswers = parsed;
+      } catch {
+        // Older rows stored a plain-text serialization, not JSON — can't restore
+        // the structured fields, so start fresh for those.
+        priorAnswers = {};
+      }
+    }
+    setExerciseAnswers(priorAnswers);
+    setBlueprintData(saved ? (saved.blueprint_data || '') : '');
+  };
+
+  // Does the current exercise have at least one non-empty answer? Gates the
+  // "Reflect on my answers" action so we don't ask the model about a blank form.
+  const hasExerciseAnswers = () => {
+    const ex = activeLesson && activeLesson.exercise;
+    if (!ex) return false;
+    if (ex.type === 'chips') {
+      return (exerciseAnswers._selected || []).length > 0 || !!(exerciseAnswers.notes || '').trim();
+    }
+    return (ex.fields || []).some((f) => (exerciseAnswers[f.key] || '').trim());
   };
 
   // Update one structured exercise field by key.
@@ -364,6 +433,40 @@ const handleSendMessage = async (textArg) => {
     });
   };
 
+  // #4 — Ask the guide to reflect on the user's Practice-step answers so they can
+  // learn from them before writing their takeaway on the Commit step. Streams the
+  // reflection into `analysisText`.
+  const handleAnalyze = async () => {
+    if (!activeLesson || analysisLoading || !hasExerciseAnswers()) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Session expired. Please log out and log back in.");
+      return;
+    }
+
+    setAnalysisLoading(true);
+    setAnalysisText('');
+    try {
+      const response = await fetch('/api/lesson/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          lesson_id: activeLesson.id,
+          skill: activeLesson.skill || '',
+          title: activeLesson.title || '',
+          answers: formatExerciseAnswers(activeLesson, exerciseAnswers),
+          context: activeLesson.ai_prompt_context || '',
+        }),
+      });
+      await streamIntoText(response, setAnalysisText);
+    } catch (error) {
+      setAnalysisText("Sorry, I couldn't connect just now. You can still continue to the next step.");
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
 
 
   const finishLesson = async () => {
@@ -374,6 +477,12 @@ const handleSendMessage = async (textArg) => {
       return;
     }
 
+    // Store the structured answers as JSON so a later review/redo can restore the
+    // exact fields the user typed (#3). The plain-text serialization is only used
+    // transiently for the AI reflection, not for storage.
+    const exerciseJson = JSON.stringify(exerciseAnswers);
+    const finishedLesson = activeLesson;
+
     try {
       // 2. Send the data to your Next.js bridge (identity comes from the token).
       const response = await fetch('/api/lesson', {
@@ -383,8 +492,8 @@ const handleSendMessage = async (textArg) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          lesson_id: activeLesson.id,
-          exercise_data: formatExerciseAnswers(activeLesson, exerciseAnswers),
+          lesson_id: finishedLesson.id,
+          exercise_data: exerciseJson,
           blueprint_data: blueprintData
         })
       });
@@ -394,15 +503,26 @@ const handleSendMessage = async (textArg) => {
         return;
       }
 
-      // 3. Close the wizard and unlock the next level (persisted so it
-      //    survives a page refresh).
+      // 3. Cache this response locally so "Review" reflects it immediately,
+      //    without waiting for a refetch.
+      setSavedAnswers(prev => ({
+        ...prev,
+        [String(finishedLesson.id)]: { exercise_data: exerciseJson, blueprint_data: blueprintData },
+      }));
+
+      // 4. Unlock the next level (persisted so it survives a page refresh).
       setUnlockedLevel(prev => {
-        const next = Math.max(prev, activeLesson.id + 1);
+        const next = Math.max(prev, finishedLesson.id + 1);
         localStorage.setItem('unlockedLevel', String(next));
         return next;
       });
+
+      // 5. Return the user to the lessons list with a brief confirmation (#2).
       setActiveLesson(null);
       setActiveStep(0);
+      setAnalysisText('');
+      setCompletedBanner(finishedLesson.title);
+      setTimeout(() => setCompletedBanner(''), 4000);
 
     } catch (error) {
       console.error("Failed to save lesson:", error);
@@ -556,6 +676,11 @@ const handleSendMessage = async (textArg) => {
             {/* VIEW A: Curriculum List */}
             {!activeLesson && (
               <Box sx={{ p: 3, height: '100%', overflowY: 'auto' }} className="fade-up">
+                {completedBanner && (
+                  <Alert severity="success" sx={{ mb: 2.5 }} onClose={() => setCompletedBanner('')}>
+                    Nice work — “{completedBanner}” is complete. You can revisit it anytime with <strong>Review</strong>.
+                  </Alert>
+                )}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 1 }}>
                   <Typography variant="h6" fontWeight={800}>Your Journey</Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
@@ -786,6 +911,45 @@ const handleSendMessage = async (textArg) => {
                           </Typography>
                         </Paper>
                       )}
+
+                      {/* #4 — AI reflection: read this before writing your takeaway */}
+                      <Divider sx={{ my: 3, borderColor: tokens.border }} />
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                          A reflection before you move on
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+                          When you&apos;ve filled in your answers above, get a short reflection to learn from — then use it to shape your takeaway on the next step.
+                        </Typography>
+
+                        {!analysisText && !analysisLoading && (
+                          <Button
+                            variant="outlined"
+                            startIcon={<AutoAwesome />}
+                            onClick={handleAnalyze}
+                            disabled={!hasExerciseAnswers()}
+                          >
+                            Reflect on my answers
+                          </Button>
+                        )}
+
+                        {(analysisText || analysisLoading) && (
+                          <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                              <AutoAwesome fontSize="small" sx={{ color: 'primary.light' }} />
+                              <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                Your guide&apos;s reflection
+                              </Typography>
+                            </Box>
+                            {analysisText ? <MarkdownText content={analysisText} /> : <TypingIndicator small />}
+                            {analysisText && !analysisLoading && (
+                              <Button size="small" onClick={handleAnalyze} sx={{ mt: 1, color: 'text.secondary' }}>
+                                Reflect again
+                              </Button>
+                            )}
+                          </Paper>
+                        )}
+                      </Box>
                     </Box>
                   )}
 
