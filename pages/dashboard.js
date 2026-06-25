@@ -251,9 +251,12 @@ export default function Dashboard() {
   const [savedAnswers, setSavedAnswers] = useState({});
   // Brief success confirmation shown on the lessons list after a module is completed.
   const [completedBanner, setCompletedBanner] = useState('');
-  // AI reflection on the Practice-step answers (#4): streamed text + loading flag.
+  // AI reflection on the Practice-step answers: streamed text + loading flag.
   const [analysisText, setAnalysisText] = useState('');
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  // AI response to the Commit-step takeaway (#3): streamed text + loading flag.
+  const [takeawayText, setTakeawayText] = useState('');
+  const [takeawayLoading, setTakeawayLoading] = useState(false);
 
   // 🚀 ON PAGE LOAD: GET THE NAME
   useEffect(() => {
@@ -335,7 +338,14 @@ export default function Dashboard() {
       });
 
       if (!response.ok) {
-        alert("Could not save your entry. Please try again.");
+        // Surface the backend's real reason instead of a silent/generic failure,
+        // so a save problem is actionable rather than "the button does nothing".
+        let detail = '';
+        try {
+          const body = await response.json();
+          detail = body.detail || body.message || '';
+        } catch (_) { /* non-JSON error body */ }
+        alert(detail ? `Could not save your entry: ${detail}` : "Could not save your entry. Please try again.");
         return;
       }
 
@@ -387,6 +397,7 @@ const handleSendMessage = async (textArg) => {
     setActiveLesson(lesson);
     setActiveStep(0);
     setAnalysisText('');
+    setTakeawayText('');
 
     // Pre-fill with the user's previous response (if any) so reviewing/redoing a
     // lesson shows what they wrote before instead of a blank slate (#3).
@@ -433,7 +444,21 @@ const handleSendMessage = async (textArg) => {
     });
   };
 
-  // #4 — Ask the guide to reflect on the user's Practice-step answers so they can
+  // Build the internal coaching context for a lesson: the goal, what the exercise
+  // asked, and the curriculum's ai_prompt_context. Sent (never shown) so the
+  // model's reflection is grounded in THIS lesson rather than generic (#2).
+  const buildLessonContext = (lesson) => {
+    if (!lesson) return '';
+    return [
+      lesson.objective ? `Lesson goal: ${lesson.objective}` : '',
+      lesson.exercise && lesson.exercise.instructions
+        ? `What the exercise asked them to do: ${lesson.exercise.instructions}`
+        : '',
+      lesson.ai_prompt_context || '',
+    ].filter(Boolean).join('\n');
+  };
+
+  // Ask the guide to reflect on the user's Practice-step answers so they can
   // learn from them before writing their takeaway on the Commit step. Streams the
   // reflection into `analysisText`.
   const handleAnalyze = async () => {
@@ -456,7 +481,8 @@ const handleSendMessage = async (textArg) => {
           skill: activeLesson.skill || '',
           title: activeLesson.title || '',
           answers: formatExerciseAnswers(activeLesson, exerciseAnswers),
-          context: activeLesson.ai_prompt_context || '',
+          context: buildLessonContext(activeLesson),
+          mode: 'reflect',
         }),
       });
       await streamIntoText(response, setAnalysisText);
@@ -464,6 +490,43 @@ const handleSendMessage = async (textArg) => {
       setAnalysisText("Sorry, I couldn't connect just now. You can still continue to the next step.");
     } finally {
       setAnalysisLoading(false);
+    }
+  };
+
+  // #3 — Once the user has written their takeaway on the Commit step, let them ask
+  // the guide for a warm response to it. Streams into `takeawayText`.
+  const handleTakeawayResponse = async () => {
+    if (!activeLesson || takeawayLoading || !blueprintData.trim()) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Session expired. Please log out and log back in.");
+      return;
+    }
+
+    setTakeawayLoading(true);
+    setTakeawayText('');
+    try {
+      const promptLine = activeLesson.reflection_prompt
+        ? `The prompt they answered: ${activeLesson.reflection_prompt}`
+        : '';
+      const response = await fetch('/api/lesson/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          lesson_id: activeLesson.id,
+          skill: activeLesson.skill || '',
+          title: activeLesson.title || '',
+          answers: blueprintData,
+          context: [buildLessonContext(activeLesson), promptLine].filter(Boolean).join('\n'),
+          mode: 'takeaway',
+        }),
+      });
+      await streamIntoText(response, setTakeawayText);
+    } catch (error) {
+      setTakeawayText("Sorry, I couldn't connect just now. Your takeaway is still saved when you complete the module.");
+    } finally {
+      setTakeawayLoading(false);
     }
   };
 
@@ -483,8 +546,29 @@ const handleSendMessage = async (textArg) => {
     const exerciseJson = JSON.stringify(exerciseAnswers);
     const finishedLesson = activeLesson;
 
+    // 2. Optimistically record progress locally and return to the lessons list
+    //    immediately, so "Complete Module" ALWAYS takes the user back even if the
+    //    server save fails (#4). The save below only changes the confirmation
+    //    message — never whether we navigate.
+    setSavedAnswers(prev => ({
+      ...prev,
+      [String(finishedLesson.id)]: { exercise_data: exerciseJson, blueprint_data: blueprintData },
+    }));
+    setUnlockedLevel(prev => {
+      const next = Math.max(prev, finishedLesson.id + 1);
+      localStorage.setItem('unlockedLevel', String(next));
+      return next;
+    });
+    setActiveLesson(null);
+    setActiveStep(0);
+    setAnalysisText('');
+    setTakeawayText('');
+    setCompletedBanner(finishedLesson.title);
+    setTimeout(() => setCompletedBanner(''), 4000);
+
+    // 3. Persist to the server in the background. A failure is logged but does not
+    //    trap the user on the lesson page — progress is already mirrored locally.
     try {
-      // 2. Send the data to your Next.js bridge (identity comes from the token).
       const response = await fetch('/api/lesson', {
         method: 'POST',
         headers: {
@@ -497,36 +581,11 @@ const handleSendMessage = async (textArg) => {
           blueprint_data: blueprintData
         })
       });
-
       if (!response.ok) {
-        alert("Failed to save your progress. Please try again.");
-        return;
+        console.error("Lesson save returned non-OK status:", response.status);
       }
-
-      // 3. Cache this response locally so "Review" reflects it immediately,
-      //    without waiting for a refetch.
-      setSavedAnswers(prev => ({
-        ...prev,
-        [String(finishedLesson.id)]: { exercise_data: exerciseJson, blueprint_data: blueprintData },
-      }));
-
-      // 4. Unlock the next level (persisted so it survives a page refresh).
-      setUnlockedLevel(prev => {
-        const next = Math.max(prev, finishedLesson.id + 1);
-        localStorage.setItem('unlockedLevel', String(next));
-        return next;
-      });
-
-      // 5. Return the user to the lessons list with a brief confirmation (#2).
-      setActiveLesson(null);
-      setActiveStep(0);
-      setAnalysisText('');
-      setCompletedBanner(finishedLesson.title);
-      setTimeout(() => setCompletedBanner(''), 4000);
-
     } catch (error) {
-      console.error("Failed to save lesson:", error);
-      alert("Failed to save your progress. Please check your internet connection.");
+      console.error("Failed to save lesson progress to server:", error);
     }
   };
 
@@ -621,7 +680,16 @@ const handleSendMessage = async (textArg) => {
 
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>What&apos;s on your mind?</Typography>
               <TextField fullWidth multiline rows={5} placeholder="Write as much or as little as you like…" value={diaryText} onChange={(e) => setDiaryText(e.target.value)} variant="outlined" sx={{ mb: 3 }} />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                {(!mood || !diaryText) && (
+                  <Typography variant="caption" color="text.secondary">
+                    {!mood && !diaryText
+                      ? 'Pick a mood and write a few words to save.'
+                      : !mood
+                        ? 'Pick a mood above to save.'
+                        : 'Write a few words to save.'}
+                  </Typography>
+                )}
                 <Button variant="contained" size="large" onClick={handleSaveDiary} disabled={!mood || !diaryText}>Save Entry</Button>
               </Box>
             </Box>
@@ -961,6 +1029,37 @@ const handleSendMessage = async (textArg) => {
                         {activeLesson.reflection_prompt}
                       </Typography>
                       <TextField fullWidth multiline rows={4} placeholder="Write your intention…" variant="outlined" value={blueprintData} onChange={(e) => setBlueprintData(e.target.value)} inputProps={{ maxLength: 2000 }} />
+
+                      {/* #3 — AI response to the takeaway the user just wrote */}
+                      <Box sx={{ mt: 3 }}>
+                        {!takeawayText && !takeawayLoading && (
+                          <Button
+                            variant="outlined"
+                            startIcon={<AutoAwesome />}
+                            onClick={handleTakeawayResponse}
+                            disabled={!blueprintData.trim()}
+                          >
+                            Get a response to your takeaway
+                          </Button>
+                        )}
+
+                        {(takeawayText || takeawayLoading) && (
+                          <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                              <AutoAwesome fontSize="small" sx={{ color: 'primary.light' }} />
+                              <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                Your guide&apos;s response
+                              </Typography>
+                            </Box>
+                            {takeawayText ? <MarkdownText content={takeawayText} /> : <TypingIndicator small />}
+                            {takeawayText && !takeawayLoading && (
+                              <Button size="small" onClick={handleTakeawayResponse} sx={{ mt: 1, color: 'text.secondary' }}>
+                                Respond again
+                              </Button>
+                            )}
+                          </Paper>
+                        )}
+                      </Box>
                     </Box>
                   )}
 
