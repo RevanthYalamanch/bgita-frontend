@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Typography, TextField, Button, Paper, Alert, CircularProgress } from '@mui/material';
+import { Psychology } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 
 export default function Login() {
@@ -46,7 +47,7 @@ export default function Login() {
 
         {/* Brand */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-          <Box className="float-pulse" sx={{ width: 60, height: 60, borderRadius: '20px', display: 'grid', placeItems: 'center', fontSize: 30, mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}>🧠</Box>
+          <Box sx={{ width: 56, height: 56, borderRadius: '16px', display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
           <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Cognitive Space</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
             Bhagavad Gita–informed CBT, in plain modern language.
@@ -81,7 +82,7 @@ export default function Login() {
 
           <Typography align="center" variant="body2" color="text.secondary" sx={{ mt: 3 }}>
             Don&apos;t have an account?{' '}
-            <Box component="span" sx={{ color: 'primary.light', cursor: 'pointer', fontWeight: 700 }} onClick={() => router.push('/register')}>
+            <Box component="span" sx={{ color: 'primary.main', cursor: 'pointer', fontWeight: 700 }} onClick={() => router.push('/register')}>
               Create one
             </Box>
           </Typography>

@@ -1,29 +1,29 @@
-/* ---- Polished Dark clinical theme — global polish ---- */
+/* ---- Clinical light theme — global polish ---- */
 /* The MUI theme in lib/theme.js owns component styling; this file covers the
    things a JS theme can't: color-scheme, font smoothing, scrollbars, and the
    shared keyframe animations referenced via className across the pages. */
-html { color-scheme: dark; }
+html { color-scheme: light; }
 
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Slim, on-theme scrollbars */
+/* Slim, neutral scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(45, 212, 191, 0.35) transparent;
+  scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
 }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
-  background: rgba(45, 212, 191, 0.28);
+  background: rgba(100, 116, 139, 0.3);
   border-radius: 99px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-*::-webkit-scrollbar-thumb:hover { background: rgba(45, 212, 191, 0.5); background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.5); background-clip: content-box; }
 
 /* Gentle ambient float for hero/brand accents */
 @keyframes floatPulse {

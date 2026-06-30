@@ -1,7 +1,7 @@
 import { Html, Head, Main, NextScript } from 'next/document';
 
-// Loads the Plus Jakarta Sans webfont and sets the dark canvas before React
-// hydrates, so there's no flash of an unstyled / light background.
+// Loads the Inter webfont and sets the light clinical canvas before React
+// hydrates, so there's no flash of an unstyled background.
 export default function Document() {
   return (
     <Html lang="en">
@@ -9,12 +9,12 @@ export default function Document() {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        <meta name="theme-color" content="#0B0F14" />
+        <meta name="theme-color" content="#F4F7FA" />
       </Head>
-      <body style={{ backgroundColor: '#0B0F14' }}>
+      <body style={{ backgroundColor: '#F4F7FA' }}>
         <Main />
         <NextScript />
       </body>

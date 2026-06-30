@@ -5,7 +5,7 @@ import {
   Typography, Button, TextField, Paper, Avatar, Alert,
   Stepper, Step, StepLabel, StepButton, Divider, Chip, Link, LinearProgress // 👈 Added Chip, Link, LinearProgress
 } from '@mui/material';
-import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome } from '@mui/icons-material'; // 👈 Added HelpOutline, AutoAwesome
+import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 
 // 🗂️ Import your new curriculum database!
@@ -121,7 +121,7 @@ function renderInline(text, keyPrefix) {
       const trail = m ? m[2] : '';
       return (
         <React.Fragment key={key}>
-          <Link href={url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.light' }}>{url}</Link>
+          <Link href={url} target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main' }}>{url}</Link>
           {trail}
         </React.Fragment>
       );
@@ -190,8 +190,8 @@ function TypingIndicator({ small }) {
   });
   return (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-      <Avatar sx={{ background: fx.tealGradient, color: '#04141A', width: small ? 32 : 40, height: small ? 32 : 40, fontSize: small ? 16 : 20 }}>🧠</Avatar>
-      <Paper elevation={0} sx={{ px: 2, py: 1.5, border: 'none', background: 'rgba(255,255,255,0.05)', borderRadius: '14px', display: 'flex', gap: 0.75, alignItems: 'center' }}>
+      <Avatar sx={{ background: fx.tealGradient, color: '#FFFFFF', width: small ? 32 : 40, height: small ? 32 : 40 }}><Psychology sx={{ fontSize: small ? 18 : 22 }} /></Avatar>
+      <Paper elevation={0} sx={{ px: 2, py: 1.5, border: 'none', background: '#F1F5F9', borderRadius: '14px', display: 'flex', gap: 0.75, alignItems: 'center' }}>
         <Box sx={dot('0s')} />
         <Box sx={dot('0.15s')} />
         <Box sx={dot('0.3s')} />
@@ -208,6 +208,24 @@ const CHAT_SUGGESTIONS = [
   "I'm overwhelmed and don't know where to start",
   'What does the Gita say about letting go?',
 ];
+
+// Mood scale shared by the check-in selector and the diary history. `v` is the
+// 1-5 value persisted to the backend (as text).
+const MOOD_OPTIONS = [
+  { v: 1, emoji: '😣', label: 'Awful' },
+  { v: 2, emoji: '😕', label: 'Low' },
+  { v: 3, emoji: '😐', label: 'Okay' },
+  { v: 4, emoji: '🙂', label: 'Good' },
+  { v: 5, emoji: '😄', label: 'Great' },
+];
+const MOOD_BY_VALUE = Object.fromEntries(MOOD_OPTIONS.map((m) => [String(m.v), m]));
+
+// Format an ISO timestamp as a friendly diary date (e.g. "Mon, Jun 30").
+function formatDiaryDate(ts) {
+  const d = new Date(ts);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 function TabPanel(props) {
   const { children, value, index, sx } = props;
@@ -234,6 +252,12 @@ export default function Dashboard() {
   const [mood, setMood] = useState(null);
   const [diaryText, setDiaryText] = useState('');
   const [diarySaved, setDiarySaved] = useState(false);
+  // Past daily check-ins (most recent first) so the user can view previous
+  // diaries; also used to detect whether they've already checked in today (6/29
+  // #1 — one entry per day). `diaryView` toggles the Diary tab between writing a
+  // new entry and browsing history.
+  const [diaryEntries, setDiaryEntries] = useState([]);
+  const [diaryView, setDiaryView] = useState('today'); // 'today' | 'history'
 
   // General Chat State
   const [chatInput, setChatInput] = useState('');
@@ -308,8 +332,30 @@ export default function Dashboard() {
           if (data && data.answers) setSavedAnswers(data.answers);
         })
         .catch(() => {});
+
+      // Pull past daily check-ins so the user can view previous diaries and so we
+      // know whether they've already checked in today (6/29 #1).
+      fetch('/api/logs', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.entries)) setDiaryEntries(data.entries);
+        })
+        .catch(() => {});
     }
   }, []);
+
+  // True once the user has saved a check-in dated today — gates the Save button
+  // to once per day and flips the Diary tab into its "done for today" state.
+  const isSameDay = (a, b) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  const checkedInToday =
+    diarySaved ||
+    diaryEntries.some((e) => {
+      const t = new Date(e.timestamp);
+      return !isNaN(t) && isSameDay(t, new Date());
+    });
 
   const handleLogout = () => {
     // Clear the name when they log out for privacy!
@@ -319,6 +365,8 @@ export default function Dashboard() {
 
   const handleSaveDiary = async () => {
     if (!mood || !diaryText) return;
+    // Guard against a second save in the same day (6/29 #1).
+    if (checkedInToday) return;
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -349,10 +397,15 @@ export default function Dashboard() {
         return;
       }
 
+      // Record the new entry locally so it shows up immediately in "previous
+      // diaries" and keeps the form locked for the rest of the day.
+      setDiaryEntries((prev) => [
+        { mood: String(mood), reflection: diaryText, timestamp: new Date().toISOString() },
+        ...prev,
+      ]);
       setDiarySaved(true);
       setMood(null);
       setDiaryText('');
-      setTimeout(() => setDiarySaved(false), 3000);
     } catch (error) {
       console.error("Failed to save journal entry:", error);
       alert("Could not save your entry. Please check your connection.");
@@ -596,7 +649,7 @@ const handleSendMessage = async (textArg) => {
         {/* HEADER */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.25, sm: 1.75 }, minWidth: 0 }}>
-            <Box sx={{ width: { xs: 38, sm: 44 }, height: { xs: 38, sm: 44 }, flexShrink: 0, borderRadius: '14px', display: 'grid', placeItems: 'center', fontSize: { xs: 19, sm: 22 }, background: fx.tealGradient, boxShadow: fx.glow }}>🧠</Box>
+            <Box sx={{ width: { xs: 38, sm: 44 }, height: { xs: 38, sm: 44 }, flexShrink: 0, borderRadius: '12px', display: 'grid', placeItems: 'center', color: '#FFFFFF', background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: { xs: 21, sm: 25 } }} /></Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="h5" fontWeight={800} sx={{ ...fx.brandGradientText, lineHeight: 1.1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>Cognitive Space</Typography>
               <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.25 }}>
@@ -617,7 +670,7 @@ const handleSendMessage = async (textArg) => {
               variant="fullWidth"
               sx={{
                 borderBottom: `1px solid ${tokens.border}`,
-                bgcolor: 'rgba(255,255,255,0.02)',
+                bgcolor: '#F8FAFC',
                 // On phones, stack the icon above the label and shrink the type
                 // so all three tabs stay readable instead of overflowing.
                 '& .MuiTab-root': {
@@ -638,60 +691,115 @@ const handleSendMessage = async (textArg) => {
           {/* 📔 DIARY */}
           <TabPanel value={tabValue} index={0}>
             <Box sx={{ maxWidth: 620, mx: 'auto' }} className="fade-up">
-              <Typography variant="h6" fontWeight={800} gutterBottom>Daily Check-In</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                A small moment of awareness. How are you arriving today?
-              </Typography>
-              {diarySaved && <Alert severity="success" sx={{ mb: 3 }}>Journal entry saved — well done for showing up.</Alert>}
-
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>How is your mood?</Typography>
-              <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1.25 }, mb: 4 }}>
-                {[
-                  { v: 1, emoji: '😣', label: 'Awful' },
-                  { v: 2, emoji: '😕', label: 'Low' },
-                  { v: 3, emoji: '😐', label: 'Okay' },
-                  { v: 4, emoji: '🙂', label: 'Good' },
-                  { v: 5, emoji: '😄', label: 'Great' },
-                ].map((m) => {
-                  const selected = mood === m.v;
-                  return (
-                    <Box
-                      key={m.v}
-                      component="button"
-                      type="button"
-                      onClick={() => setMood(m.v)}
-                      sx={{
-                        flex: 1, minWidth: 0, py: { xs: 1.25, sm: 2 }, px: 0.5, cursor: 'pointer', fontFamily: 'inherit', borderRadius: '16px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
-                        transition: 'all .2s ease',
-                        background: selected ? 'rgba(45,212,191,0.12)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${selected ? tokens.teal : tokens.border}`,
-                        boxShadow: selected ? fx.glow : 'none',
-                        transform: selected ? 'translateY(-3px)' : 'none',
-                        '&:hover': { borderColor: tokens.borderStrong, transform: 'translateY(-2px)' },
-                      }}
-                    >
-                      <Box sx={{ fontSize: { xs: 22, sm: 28 }, lineHeight: 1, filter: selected ? 'none' : 'grayscale(0.4)' }}>{m.emoji}</Box>
-                      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: '0.62rem', sm: '0.75rem' }, color: selected ? 'primary.light' : 'text.secondary' }}>{m.label}</Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
-
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>What&apos;s on your mind?</Typography>
-              <TextField fullWidth multiline rows={5} placeholder="Write as much or as little as you like…" value={diaryText} onChange={(e) => setDiaryText(e.target.value)} variant="outlined" sx={{ mb: 3 }} />
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
-                {(!mood || !diaryText) && (
-                  <Typography variant="caption" color="text.secondary">
-                    {!mood && !diaryText
-                      ? 'Pick a mood and write a few words to save.'
-                      : !mood
-                        ? 'Pick a mood above to save.'
-                        : 'Write a few words to save.'}
-                  </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 2, mb: 0.5 }}>
+                <Typography variant="h6" fontWeight={800}>Daily Check-In</Typography>
+                {diaryEntries.length > 0 && (
+                  <Button
+                    size="small"
+                    onClick={() => setDiaryView((v) => (v === 'history' ? 'today' : 'history'))}
+                    sx={{ color: 'text.secondary', flexShrink: 0 }}
+                  >
+                    {diaryView === 'history' ? 'Back to today' : `Previous entries (${diaryEntries.length})`}
+                  </Button>
                 )}
-                <Button variant="contained" size="large" onClick={handleSaveDiary} disabled={!mood || !diaryText}>Save Entry</Button>
               </Box>
+
+              {diaryView === 'history' ? (
+                /* ── Previous diaries ─────────────────────────────────────── */
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    A look back at how you&apos;ve been arriving.
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {diaryEntries.map((entry, i) => {
+                      const m = MOOD_BY_VALUE[String(entry.mood)];
+                      return (
+                        <Paper key={i} elevation={0} sx={{ p: 2.5, borderRadius: '16px', background: '#F8FAFC', border: `1px solid ${tokens.border}` }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: entry.reflection ? 1 : 0 }}>
+                            <Box sx={{ fontSize: 22, lineHeight: 1 }}>{m ? m.emoji : '📝'}</Box>
+                            <Typography variant="subtitle2" fontWeight={700}>{m ? m.label : 'Entry'}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>{formatDiaryDate(entry.timestamp)}</Typography>
+                          </Box>
+                          {entry.reflection && (
+                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                              {entry.reflection}
+                            </Typography>
+                          )}
+                        </Paper>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              ) : checkedInToday ? (
+                /* ── Already checked in today ─────────────────────────────── */
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    A small moment of awareness, once a day.
+                  </Typography>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', textAlign: 'center', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                    <CheckCircle sx={{ color: 'primary.main', fontSize: 32, mb: 1 }} />
+                    <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5 }}>You&apos;ve checked in today.</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Well done for showing up. Come back tomorrow for your next check-in.
+                    </Typography>
+                    {diaryEntries.length > 0 && (
+                      <Button variant="outlined" size="small" onClick={() => setDiaryView('history')} sx={{ mt: 2 }}>
+                        View previous entries
+                      </Button>
+                    )}
+                  </Paper>
+                </Box>
+              ) : (
+                /* ── New check-in form ────────────────────────────────────── */
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    A small moment of awareness. How are you arriving today?
+                  </Typography>
+
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>How is your mood?</Typography>
+                  <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1.25 }, mb: 4 }}>
+                    {MOOD_OPTIONS.map((m) => {
+                      const selected = mood === m.v;
+                      return (
+                        <Box
+                          key={m.v}
+                          component="button"
+                          type="button"
+                          onClick={() => setMood(m.v)}
+                          sx={{
+                            flex: 1, minWidth: 0, py: { xs: 1.25, sm: 2 }, px: 0.5, cursor: 'pointer', fontFamily: 'inherit', borderRadius: '16px',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
+                            transition: 'all .2s ease',
+                            background: selected ? 'rgba(45,212,191,0.12)' : '#F8FAFC',
+                            border: `1px solid ${selected ? tokens.teal : tokens.border}`,
+                            boxShadow: selected ? fx.glow : 'none',
+                            transform: selected ? 'translateY(-3px)' : 'none',
+                            '&:hover': { borderColor: tokens.borderStrong, transform: 'translateY(-2px)' },
+                          }}
+                        >
+                          <Box sx={{ fontSize: { xs: 22, sm: 28 }, lineHeight: 1, filter: selected ? 'none' : 'grayscale(0.4)' }}>{m.emoji}</Box>
+                          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: { xs: '0.62rem', sm: '0.75rem' }, color: selected ? 'primary.main' : 'text.secondary' }}>{m.label}</Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>What&apos;s on your mind?</Typography>
+                  <TextField fullWidth multiline rows={5} placeholder="Write as much or as little as you like…" value={diaryText} onChange={(e) => setDiaryText(e.target.value)} variant="outlined" sx={{ mb: 3 }} />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                    {(!mood || !diaryText) && (
+                      <Typography variant="caption" color="text.secondary">
+                        {!mood && !diaryText
+                          ? 'Pick a mood and write a few words to save.'
+                          : !mood
+                            ? 'Pick a mood above to save.'
+                            : 'Write a few words to save.'}
+                      </Typography>
+                    )}
+                    <Button variant="contained" size="large" onClick={handleSaveDiary} disabled={!mood || !diaryText}>Save Entry</Button>
+                  </Box>
+                </Box>
+              )}
             </Box>
           </TabPanel>
 
@@ -701,8 +809,8 @@ const handleSendMessage = async (textArg) => {
             <Box sx={{ flex: 1, p: 3, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, maxHeight: '500px' }}>
               {chatMessages.map((msg, index) => (
                 <Box key={index} sx={{ display: 'flex', gap: 2, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
-                  <Avatar sx={{ background: msg.role === 'user' ? 'rgba(255,255,255,0.08)' : fx.tealGradient, color: msg.role === 'user' ? 'text.primary' : '#04141A' }}>{msg.role === 'user' ? '👤' : '🧠'}</Avatar>
-                  <Paper elevation={0} sx={{ p: 2, border: 'none', background: msg.role === 'user' ? fx.tealGradient : 'rgba(255,255,255,0.05)', color: msg.role === 'user' ? '#04141A' : 'text.primary', maxWidth: '80%', borderRadius: '16px', borderTopRightRadius: msg.role === 'user' ? '4px' : '16px', borderTopLeftRadius: msg.role === 'user' ? '16px' : '4px' }}>
+                  <Avatar sx={{ background: msg.role === 'user' ? '#E2E8F0' : fx.tealGradient, color: msg.role === 'user' ? 'text.secondary' : '#FFFFFF' }}>{msg.role === 'user' ? <Person fontSize="small" /> : <Psychology fontSize="small" />}</Avatar>
+                  <Paper elevation={0} sx={{ p: 2, border: 'none', background: msg.role === 'user' ? fx.tealGradient : '#F1F5F9', color: msg.role === 'user' ? '#FFFFFF' : 'text.primary', maxWidth: '80%', borderRadius: '16px', borderTopRightRadius: msg.role === 'user' ? '4px' : '16px', borderTopLeftRadius: msg.role === 'user' ? '16px' : '4px' }}>
                     {msg.role === 'user'
                       ? <Typography sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                       : <MarkdownText content={msg.content} />}
@@ -732,7 +840,7 @@ const handleSendMessage = async (textArg) => {
                 </Box>
               )}
             </Box>
-            <Box sx={{ p: 2, borderTop: `1px solid ${tokens.border}`, display: 'flex', gap: 1, bgcolor: 'rgba(255,255,255,0.02)' }}>
+            <Box sx={{ p: 2, borderTop: `1px solid ${tokens.border}`, display: 'flex', gap: 1, bgcolor: '#F8FAFC' }}>
               <TextField fullWidth placeholder="Type your message..." variant="outlined" size="small" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} inputProps={{ maxLength: 4000 }} />
               <Button variant="contained" onClick={handleSendMessage} disabled={isLoading}>Send</Button>
             </Box>
@@ -768,7 +876,7 @@ const handleSendMessage = async (textArg) => {
                       <Box key={track.id} sx={{ mb: 4 }}>
                         {/* Track header */}
                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 0.5, mt: trackIndex === 0 ? 0 : 1 }}>
-                          <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 800, letterSpacing: 1.5 }}>
+                          <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 1.5 }}>
                             {track.id === 'CAPSTONE' ? 'Finale' : `Track ${trackIndex + 1}`}
                           </Typography>
                           <Typography variant="subtitle1" fontWeight={800}>{track.title}</Typography>
@@ -787,7 +895,7 @@ const handleSendMessage = async (textArg) => {
                                 p: 2.5, mb: 1.5, display: 'flex', alignItems: 'center', gap: 2,
                                 borderRadius: '16px',
                                 border: `1px solid ${isCurrent ? tokens.teal : tokens.border}`,
-                                background: isCurrent ? 'rgba(45,212,191,0.07)' : 'rgba(255,255,255,0.02)',
+                                background: isCurrent ? 'rgba(45,212,191,0.07)' : '#F8FAFC',
                                 boxShadow: isCurrent ? fx.glow : 'none',
                                 opacity: isUnlocked ? 1 : 0.55,
                                 transition: 'all .2s ease',
@@ -797,8 +905,8 @@ const handleSendMessage = async (textArg) => {
                               {/* Status badge */}
                               <Box sx={{
                                 width: 40, height: 40, flexShrink: 0, borderRadius: '12px', display: 'grid', placeItems: 'center', fontWeight: 800,
-                                background: isDone ? fx.tealGradient : (isCurrent ? 'rgba(45,212,191,0.15)' : 'rgba(255,255,255,0.05)'),
-                                color: isDone ? '#04141A' : (isCurrent ? tokens.tealLight : 'text.secondary'),
+                                background: isDone ? fx.tealGradient : (isCurrent ? 'rgba(45,212,191,0.15)' : '#F1F5F9'),
+                                color: isDone ? '#FFFFFF' : (isCurrent ? tokens.tealDark : 'text.secondary'),
                                 border: `1px solid ${isCurrent && !isDone ? tokens.teal : tokens.border}`,
                               }}>
                                 {!isUnlocked ? <Lock fontSize="small" /> : (isDone ? <CheckCircle fontSize="small" /> : lesson.id)}
@@ -827,7 +935,7 @@ const handleSendMessage = async (textArg) => {
               <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 
                                 {/* Wizard Header */}
-                <Box sx={{ p: 3, borderBottom: `1px solid ${tokens.border}`, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                <Box sx={{ p: 3, borderBottom: `1px solid ${tokens.border}`, bgcolor: '#F8FAFC' }}>
 
                   <Button
                     startIcon={<ArrowBack />} 
@@ -840,7 +948,7 @@ const handleSendMessage = async (textArg) => {
                   {(() => {
                     const track = TRACKS.find((t) => t.id === activeLesson.modality);
                     return track ? (
-                      <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 800, letterSpacing: 1.5, display: 'block', mb: 0.5 }}>
+                      <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 1.5, display: 'block', mb: 0.5 }}>
                         {track.title}
                       </Typography>
                     ) : null;
@@ -881,7 +989,7 @@ const handleSendMessage = async (textArg) => {
                       )}
 
                       {/* Gita anchor callout */}
-                      <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: '14px', background: 'rgba(255,255,255,0.04)', borderLeft: `3px solid ${tokens.primary || '#2DD4BF'}` }}>
+                      <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: '14px', background: '#F1F5F9', borderLeft: `3px solid ${tokens.primary || '#2DD4BF'}` }}>
                         <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                           {activeLesson.gita_anchor.ref}
                         </Typography>
@@ -972,7 +1080,7 @@ const handleSendMessage = async (textArg) => {
 
                       {/* Safety note — gentle guardrail tied to this exercise */}
                       {activeLesson.safety_note && (
-                        <Paper elevation={0} sx={{ mt: 3, p: 2, borderRadius: '12px', display: 'flex', gap: 1.25, background: 'rgba(255,255,255,0.03)', border: `1px solid ${tokens.border}` }}>
+                        <Paper elevation={0} sx={{ mt: 3, p: 2, borderRadius: '12px', display: 'flex', gap: 1.25, background: '#F8FAFC', border: `1px solid ${tokens.border}` }}>
                           <HelpOutline fontSize="small" sx={{ color: 'text.secondary', mt: '2px', flexShrink: 0 }} />
                           <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
                             {activeLesson.safety_note}
@@ -1004,7 +1112,7 @@ const handleSendMessage = async (textArg) => {
                         {(analysisText || analysisLoading) && (
                           <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                              <AutoAwesome fontSize="small" sx={{ color: 'primary.light' }} />
+                              <AutoAwesome fontSize="small" sx={{ color: 'primary.main' }} />
                               <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                                 Your guide&apos;s reflection
                               </Typography>
@@ -1046,7 +1154,7 @@ const handleSendMessage = async (textArg) => {
                         {(takeawayText || takeawayLoading) && (
                           <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                              <AutoAwesome fontSize="small" sx={{ color: 'primary.light' }} />
+                              <AutoAwesome fontSize="small" sx={{ color: 'primary.main' }} />
                               <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                                 Your guide&apos;s response
                               </Typography>
@@ -1066,7 +1174,7 @@ const handleSendMessage = async (textArg) => {
                 </Box>
 
                 {/* Wizard Footer Controls */}
-                <Box sx={{ p: 2, borderTop: `1px solid ${tokens.border}`, display: 'flex', justifyContent: 'space-between', bgcolor: 'rgba(255,255,255,0.02)' }}>
+                <Box sx={{ p: 2, borderTop: `1px solid ${tokens.border}`, display: 'flex', justifyContent: 'space-between', bgcolor: '#F8FAFC' }}>
                   <Button disabled={activeStep === 0} onClick={() => setActiveStep(prev => prev - 1)}>Previous</Button>
                   
                   {activeStep < 2 ? (

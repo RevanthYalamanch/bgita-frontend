@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Typography, TextField, Button, Paper, Alert, CircularProgress } from '@mui/material';
+import { Psychology } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 
 export default function Login() {
@@ -75,7 +76,7 @@ export default function Login() {
 
           {/* Brand */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-            <Box className="float-pulse" sx={{ width: 60, height: 60, borderRadius: '20px', display: 'grid', placeItems: 'center', fontSize: 30, mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}>🧠</Box>
+            <Box sx={{ width: 56, height: 56, borderRadius: '16px', display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
             <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Cognitive Space</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
               Bhagavad Gita–informed CBT, in plain modern language.
@@ -85,7 +86,7 @@ export default function Login() {
           <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, ...fx.glassCard }}>
 
             {/* Patient / Clinician segmented control */}
-            <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: '14px', bgcolor: 'rgba(255,255,255,0.04)', border: `1px solid ${tokens.border}` }}>
+            <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: '12px', bgcolor: '#F1F5F9', border: `1px solid ${tokens.border}` }}>
               {[{ k: 'user', label: 'Patient' }, { k: 'admin', label: 'Clinician' }].map((opt) => (
                 <Box
                   key={opt.k}
@@ -95,9 +96,9 @@ export default function Login() {
                   sx={{
                     flex: 1, py: 1.1, borderRadius: '10px', border: 'none', cursor: 'pointer',
                     fontFamily: 'inherit', fontWeight: 700, fontSize: '0.9rem', transition: 'all .2s ease',
-                    color: loginMode === opt.k ? '#04141A' : 'text.secondary',
+                    color: loginMode === opt.k ? '#FFFFFF' : 'text.secondary',
                     background: loginMode === opt.k ? fx.tealGradient : 'transparent',
-                    boxShadow: loginMode === opt.k ? '0 8px 20px -10px rgba(45,212,191,0.7)' : 'none',
+                    boxShadow: loginMode === opt.k ? '0 1px 2px rgba(15,23,42,0.12)' : 'none',
                   }}
                 >
                   {opt.label}
@@ -132,7 +133,7 @@ export default function Login() {
 
             <Typography align="center" variant="body2" color="text.secondary" sx={{ mt: 3 }}>
               Don&apos;t have an account?{' '}
-              <Box component="span" sx={{ color: 'primary.light', cursor: 'pointer', fontWeight: 700 }} onClick={() => router.push('/register')}>
+              <Box component="span" sx={{ color: 'primary.main', cursor: 'pointer', fontWeight: 700 }} onClick={() => router.push('/register')}>
                 Create one
               </Box>
             </Typography>

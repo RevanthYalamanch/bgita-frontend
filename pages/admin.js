@@ -77,7 +77,7 @@ export default function AdminDashboard() {
 
         {/* NAVIGATION TABS */}
         <Paper elevation={0} sx={{ ...fx.glassCard, borderRadius: '20px', overflow: 'hidden' }}>
-          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="fullWidth" sx={{ borderBottom: `1px solid ${tokens.border}`, bgcolor: 'rgba(255,255,255,0.02)' }}>
+          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="fullWidth" sx={{ borderBottom: `1px solid ${tokens.border}`, bgcolor: '#F8FAFC' }}>
             <Tab icon={<Speed />} iconPosition="start" label="AI Telemetry" />
             <Tab icon={<MenuBook />} iconPosition="start" label="Lesson Progress" />
             <Tab icon={<Mood />} iconPosition="start" label="Mood Check-Ins" />
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
                           <TableCell>{new Date(row.completed_at).toLocaleString()}</TableCell>
                           <TableCell sx={{ color: 'primary.main' }}>{row.email}</TableCell>
                           <TableCell align="right">
-                            <Box component="span" sx={{ bgcolor: 'primary.dark', px: 1.5, py: 0.5, borderRadius: 1 }}>
+                            <Box component="span" sx={{ bgcolor: tokens.tealSurface, color: tokens.tealDark, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 1, border: `1px solid ${tokens.border}` }}>
                               Module {row.lesson_id}
                             </Box>
                           </TableCell>
@@ -161,9 +161,10 @@ export default function AdminDashboard() {
                           <TableCell>{new Date(row.timestamp).toLocaleString()}</TableCell>
                           <TableCell sx={{ color: 'primary.main' }}>{row.email}</TableCell>
                           <TableCell align="right">
-                            <Box component="span" sx={{ 
-                              bgcolor: row.mood <= 2 ? '#7f1d1d' : (row.mood == 3 ? '#713f12' : '#14532d'), 
-                              px: 1.5, py: 0.5, borderRadius: 1, fontWeight: 'bold' 
+                            <Box component="span" sx={{
+                              bgcolor: row.mood <= 2 ? '#FEE2E2' : (row.mood == 3 ? '#FEF3C7' : '#DCFCE7'),
+                              color: row.mood <= 2 ? '#991B1B' : (row.mood == 3 ? '#92400E' : '#166534'),
+                              px: 1.5, py: 0.5, borderRadius: 1, fontWeight: 'bold'
                             }}>
                               {row.mood} / 5
                             </Box>

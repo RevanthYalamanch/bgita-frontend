@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Typography, TextField, Button, Paper, Alert, CircularProgress } from '@mui/material';
+import { Psychology } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 
 export default function Register() {
@@ -55,7 +56,7 @@ export default function Register() {
 
         {/* Brand */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-          <Box className="float-pulse" sx={{ width: 60, height: 60, borderRadius: '20px', display: 'grid', placeItems: 'center', fontSize: 30, mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}>🧠</Box>
+          <Box sx={{ width: 56, height: 56, borderRadius: '16px', display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
           <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Cognitive Space</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
             Start your journey to better mental wellbeing.
@@ -85,11 +86,11 @@ export default function Register() {
             />
 
             {/* 🕵️ THE SECRET ADMIN FIELD */}
-            <Box sx={{ mb: 4, p: 2, border: `1px dashed ${tokens.borderStrong}`, borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.02)' }}>
+            <Box sx={{ mb: 4, p: 2, border: `1px dashed ${tokens.borderStrong}`, borderRadius: '12px', bgcolor: '#F8FAFC' }}>
               <TextField
                 fullWidth label="Clinician Access Code (Optional)" type="password" variant="standard"
                 value={adminCode} onChange={(e) => setAdminCode(e.target.value)}
-                InputProps={{ disableUnderline: true, sx: { color: 'secondary.light' } }}
+                InputProps={{ disableUnderline: true, sx: { color: 'text.primary' } }}
               />
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                 Leave blank for standard patient registration.
@@ -108,7 +109,7 @@ export default function Register() {
           {/* THE LOGIN LINK */}
           <Typography align="center" variant="body2" color="text.secondary" sx={{ mt: 3 }}>
             Already have an account?{' '}
-            <Box component="span" sx={{ color: 'primary.light', cursor: 'pointer', fontWeight: 700 }} onClick={() => router.push('/login')}>
+            <Box component="span" sx={{ color: 'primary.main', cursor: 'pointer', fontWeight: 700 }} onClick={() => router.push('/login')}>
               Sign in here
             </Box>
           </Typography>
