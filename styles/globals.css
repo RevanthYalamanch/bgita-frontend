@@ -1,13 +1,21 @@
-/* ---- Clinical light theme — global polish ---- */
+/* ---- Clinical theme (light + dark) — global polish ---- */
 /* The MUI theme in lib/theme.js owns component styling; this file covers the
-   things a JS theme can't: color-scheme, font smoothing, scrollbars, and the
-   shared keyframe animations referenced via className across the pages. */
-html { color-scheme: light; }
+   things a JS theme can't: font smoothing, scrollbars, and the shared keyframe
+   animations referenced via className across the pages. The design-token CSS
+   vars (--c-*) and per-scheme `color-scheme` are injected by _document.js. */
 
+/* Pre-hydration canvas: mirrors fx.pageBackground using the --c-* vars so the
+   correct light/dark background paints before MUI's CssBaseline loads. */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 700px at 50% -15%, rgba(13, 148, 136, 0.06), transparent 55%),
+    var(--c-bg);
+  background-attachment: fixed;
+  color: var(--c-textPrimary);
 }
 
 /* Slim, neutral scrollbars */

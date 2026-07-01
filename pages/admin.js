@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Speed, MenuBook, Mood } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
+import ThemeToggle from '../components/ThemeToggle';
 
 // A quick helper to show tabs
 function TabPanel(props) {
@@ -70,14 +71,17 @@ export default function AdminDashboard() {
             <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Command Center</Typography>
             <Typography variant="body2" color="text.secondary">Live Telemetry, Progress & Clinical Outcomes</Typography>
           </Box>
-          <Button startIcon={<ArrowBack />} onClick={() => router.push('/dashboard')} variant="outlined">
-            Back to App
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ThemeToggle />
+            <Button startIcon={<ArrowBack />} onClick={() => router.push('/dashboard')} variant="outlined">
+              Back to App
+            </Button>
+          </Box>
         </Box>
 
         {/* NAVIGATION TABS */}
         <Paper elevation={0} sx={{ ...fx.glassCard, borderRadius: '20px', overflow: 'hidden' }}>
-          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="fullWidth" sx={{ borderBottom: `1px solid ${tokens.border}`, bgcolor: '#F8FAFC' }}>
+          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="fullWidth" sx={{ borderBottom: `1px solid ${tokens.border}`, bgcolor: tokens.surfaceMuted }}>
             <Tab icon={<Speed />} iconPosition="start" label="AI Telemetry" />
             <Tab icon={<MenuBook />} iconPosition="start" label="Lesson Progress" />
             <Tab icon={<Mood />} iconPosition="start" label="Mood Check-Ins" />

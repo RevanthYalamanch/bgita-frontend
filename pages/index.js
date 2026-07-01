@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { Box, Typography, TextField, Button, Paper, Alert, CircularProgress } from '@mui/material';
 import { Psychology } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
   const router = useRouter();
@@ -72,6 +73,7 @@ export default function Login() {
 
   return (
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+        <ThemeToggle floating />
         <Box className="fade-up" sx={{ width: '100%', maxWidth: 430 }}>
 
           {/* Brand */}
@@ -86,7 +88,7 @@ export default function Login() {
           <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, ...fx.glassCard }}>
 
             {/* Patient / Clinician segmented control */}
-            <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: '12px', bgcolor: '#F1F5F9', border: `1px solid ${tokens.border}` }}>
+            <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: '12px', bgcolor: tokens.surfaceHover, border: `1px solid ${tokens.border}` }}>
               {[{ k: 'user', label: 'Patient' }, { k: 'admin', label: 'Clinician' }].map((opt) => (
                 <Box
                   key={opt.k}
