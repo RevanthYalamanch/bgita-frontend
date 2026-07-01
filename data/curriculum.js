@@ -79,7 +79,7 @@ export const LESSON_DATA = [
     concept: {
       hook: "The greatest archer alive sinks down unable to act — undone not by the battle, but by the story he tells about it.",
       bridge: "There's a simple map for this: a **Situation** sparks a **Thought**, the thought drives a **Feeling**, and the feeling shapes a **Behavior**. The situation rarely changes how we feel on its own — the thought in the middle does. Shift that, and the whole chain shifts.",
-      example: "A friend doesn't text back. *Situation:* no reply. *Thought:* \"They're done with me.\" *Feeling:* rejected. *Behavior:* you go quiet too. Swap the thought to \"They're probably swamped\" and the feeling and behavior change — same situation."
+      example: "A friend doesn't text back:\n\n- **Situation:** no reply\n- **Thought:** \"They're done with me.\"\n- **Feeling:** rejected\n- **Behavior:** you go quiet too\n\nNow swap the thought to \"They're probably swamped\" — and the feeling and behavior shift right along with it. Same situation, different story."
     },
     exercise: {
       type: "fields",

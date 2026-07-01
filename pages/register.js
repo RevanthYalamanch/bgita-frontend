@@ -90,12 +90,12 @@ export default function Register() {
             {/* 🕵️ THE SECRET ADMIN FIELD */}
             <Box sx={{ mb: 4, p: 2, border: `1px dashed ${tokens.borderStrong}`, borderRadius: '12px', bgcolor: tokens.surfaceMuted }}>
               <TextField
-                fullWidth label="Clinician Access Code (Optional)" type="password" variant="standard"
+                fullWidth label="Admin Access Code (Optional)" type="password" variant="standard"
                 value={adminCode} onChange={(e) => setAdminCode(e.target.value)}
                 InputProps={{ disableUnderline: true, sx: { color: 'text.primary' } }}
               />
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                Leave blank for standard patient registration.
+                Leave blank for standard registration. Enter the admin code only if you have one.
               </Typography>
             </Box>
 

@@ -106,14 +106,19 @@ async function streamIntoText(response, setText) {
   }
 }
 
-// Render inline markdown: **bold** and bare http(s) URLs (autolinked). Anything
-// else passes through as plain text. Returns an array of React nodes.
+// Render inline markdown: **bold**, *italic*, and bare http(s) URLs (autolinked).
+// Anything else passes through as plain text. Returns an array of React nodes.
+// Note: the bold alternative is listed before italic so **x** is consumed whole
+// and never mis-parsed as two empty italics.
 function renderInline(text, keyPrefix) {
-  const parts = (text || '').split(/(\*\*[^*]+\*\*|https?:\/\/[^\s]+)/g).filter(Boolean);
+  const parts = (text || '').split(/(\*\*[^*]+\*\*|\*[^*\n]+\*|https?:\/\/[^\s]+)/g).filter(Boolean);
   return parts.map((part, i) => {
     const key = `${keyPrefix}-${i}`;
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={key}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) {
+      return <em key={key}>{part.slice(1, -1)}</em>;
     }
     if (/^https?:\/\//.test(part)) {
       // Don't swallow trailing sentence punctuation into the link.
