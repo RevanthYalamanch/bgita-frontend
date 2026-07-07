@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import {
-  Box, Tabs, Tab,
+  Box, Tabs, Tab, IconButton, Tooltip,
   Typography, Button, TextField, Paper, Avatar, Alert,
   Stepper, Step, StepLabel, StepButton, Divider, Chip, Link, LinearProgress // 👈 Added Chip, Link, LinearProgress
 } from '@mui/material';
-import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person } from '@mui/icons-material';
+import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person, Mic, MicNone, VolumeUp, VolumeOff } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
+import { isDictationSupported, createDictation, speak, stopSpeaking } from '../lib/voice';
 import ThemeToggle from '../components/ThemeToggle';
 
 // 🗂️ Import your new curriculum database!
@@ -51,7 +52,7 @@ async function streamInto(response, setMessages) {
     if (response.status === 429) msg = "You're sending messages too quickly. Please wait a moment and try again.";
     else if (response.status === 422) msg = "That message is too long. Please shorten it and try again.";
     setMessages(prev => [...prev, { role: 'ai', content: msg }]);
-    return;
+    return '';
   }
 
   setMessages(prev => [...prev, { role: 'ai', content: '' }]);
@@ -63,7 +64,7 @@ async function streamInto(response, setMessages) {
       next[next.length - 1] = { role: 'ai', content: fallback };
       return next;
     });
-    return;
+    return fallback;
   }
 
   const reader = response.body.getReader();
@@ -79,6 +80,90 @@ async function streamInto(response, setMessages) {
       return next;
     });
   }
+  // Return the full reply so callers (e.g. read-aloud) can use the final text.
+  return acc;
+}
+
+// Strip markdown so text-to-speech reads clean prose instead of literal
+// "asterisk asterisk" / "hash" characters.
+function stripForSpeech(md) {
+  return (md || '')
+    .replace(/```[\s\S]*?```/g, '')          // fenced code blocks
+    .replace(/`([^`]+)`/g, '$1')              // inline code
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')     // images
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')  // links -> visible text
+    .replace(/[*_#>~]/g, '')                  // emphasis / heading / quote marks
+    .replace(/\n{2,}/g, '. ')                 // paragraph breaks -> spoken pause
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// A TextField with a built-in dictation mic (top-right corner). Speech appends
+// to the field; the user reviews before saving/submitting. Pass `value` and
+// `onValueChange(newString)`; all other props (multiline, rows, placeholder,
+// variant, fullWidth…) pass straight through to the underlying TextField.
+function VoiceTextField({ value, onValueChange, maxLength = 2000, sx, ...rest }) {
+  const [listening, setListening] = useState(false);
+  const sessionRef = useRef(null);
+  const baseRef = useRef('');     // committed text so interim results replace only the tail
+
+  const stop = () => { if (sessionRef.current) sessionRef.current.stop(); };
+  useEffect(() => () => stop(), []);   // release the mic if unmounted mid-listen
+
+  const toggle = () => {
+    if (listening) { stop(); return; }
+    if (!isDictationSupported()) {
+      alert("Voice input isn't supported in this browser yet. Try Chrome or Edge.");
+      return;
+    }
+    baseRef.current = value ? value.trimEnd() + ' ' : '';
+    const session = createDictation({
+      onPartial: (interim) => onValueChange((baseRef.current + interim).slice(0, maxLength)),
+      onFinal: (text) => {
+        baseRef.current = baseRef.current + text + ' ';
+        onValueChange(baseRef.current.slice(0, maxLength));
+      },
+      onEnd: () => setListening(false),
+      onError: (code) => {
+        setListening(false);
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          alert('Microphone access is blocked. Please allow mic access in your browser settings, then try again.');
+        }
+      },
+    });
+    if (!session) return;
+    sessionRef.current = session;
+    session.start();
+    setListening(true);
+  };
+
+  return (
+    <Box sx={{ position: 'relative', ...sx }}>
+      <TextField
+        {...rest}
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        inputProps={{ maxLength, ...(rest.inputProps || {}) }}
+        sx={{ '& textarea': { pr: 4.5 }, ...(rest.sx || {}) }}
+      />
+      <Tooltip title={listening ? 'Stop listening' : 'Speak'}>
+        <IconButton
+          onClick={toggle}
+          size="small"
+          aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+          sx={{
+            position: 'absolute', top: 8, right: 8,
+            border: `1px solid ${listening ? tokens.teal : tokens.border}`,
+            color: listening ? '#FFFFFF' : 'text.secondary',
+            background: listening ? fx.tealGradient : 'transparent',
+            '&:hover': { background: listening ? fx.tealGradient : undefined },
+          }}
+        >
+          {listening ? <Mic fontSize="small" /> : <MicNone fontSize="small" />}
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
 }
 
 // Read a streaming text/plain response into a single string state (used by the
@@ -270,6 +355,51 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([{ role: 'ai', content: 'Hello Revanth. I am your Cognitive Space guide. How are you feeling today?' }]);
 
+  // 🎙️ Voice State (dictation + read-aloud). See lib/voice.js.
+  const [isListening, setIsListening] = useState(false);
+  const [readAloud, setReadAloud] = useState(false);
+  const dictationRef = useRef(null);        // active dictation session { start, stop }
+  const finalTranscriptRef = useRef('');    // committed transcript so interim text can replace only the tail
+
+  const stopDictation = () => {
+    if (dictationRef.current) dictationRef.current.stop();
+  };
+
+  // Toggle the mic. Speech fills the chat box (capped at the 4000-char limit);
+  // the user reviews and taps Send, so stray noise never auto-sends.
+  const toggleDictation = () => {
+    if (isListening) { stopDictation(); return; }
+    if (!isDictationSupported()) {
+      alert("Voice input isn't supported in this browser yet. Try Chrome or Edge — or use the mobile app once it's out.");
+      return;
+    }
+    // Start from whatever is already typed, so dictation appends rather than wipes.
+    finalTranscriptRef.current = chatInput ? chatInput.trimEnd() + ' ' : '';
+    const session = createDictation({
+      onPartial: (interim) => setChatInput((finalTranscriptRef.current + interim).slice(0, 4000)),
+      onFinal: (text) => {
+        finalTranscriptRef.current = (finalTranscriptRef.current + text + ' ');
+        setChatInput(finalTranscriptRef.current.slice(0, 4000));
+      },
+      onEnd: () => setIsListening(false),
+      onError: (code) => {
+        setIsListening(false);
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          alert('Microphone access is blocked. Please allow mic access in your browser settings, then try again.');
+        }
+      },
+    });
+    if (!session) return;
+    dictationRef.current = session;
+    session.start();
+    setIsListening(true);
+  };
+
+  // Stop any mic / speech when leaving the dashboard.
+  useEffect(() => {
+    return () => { stopDictation(); stopSpeaking(); };
+  }, []);
+
   // 📖 LESSON WIZARD STATE
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [activeLesson, setActiveLesson] = useState(null); // Which lesson is open?
@@ -423,6 +553,9 @@ const handleSendMessage = async (textArg) => {
     // chip (string). Ignore the event object so only a real string overrides.
     const userText = (typeof textArg === 'string' ? textArg : chatInput).trim();
     if (!userText) return;
+    // Stop the mic on send so a trailing final transcript can't refill the box.
+    if (isListening) stopDictation();
+    finalTranscriptRef.current = '';
     setChatInput('');
     // Snapshot the conversation so far to send as context (before adding the new turn).
     const history = toHistory(chatMessages);
@@ -455,7 +588,8 @@ const handleSendMessage = async (textArg) => {
         setChatMessages(prev => [...prev, { role: 'ai', content: "Your session has expired. Please log out and log back in to keep chatting." }]);
         return;
       }
-      await streamInto(response, setChatMessages);
+      const reply = await streamInto(response, setChatMessages);
+      if (readAloud && reply) speak(stripForSpeech(reply));
     } catch (error) {
       setChatMessages(prev => [...prev, { role: 'ai', content: "Network error connecting to bridge." }]);
     } finally {
@@ -829,7 +963,7 @@ const handleSendMessage = async (textArg) => {
                   </Box>
 
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>What&apos;s on your mind?</Typography>
-                  <TextField fullWidth multiline rows={5} placeholder="Write as much or as little as you like…" value={diaryText} onChange={(e) => setDiaryText(e.target.value)} variant="outlined" sx={{ mb: 3 }} />
+                  <VoiceTextField fullWidth multiline rows={5} placeholder="Write as much or as little as you like…" value={diaryText} onValueChange={setDiaryText} variant="outlined" maxLength={4000} sx={{ mb: 3 }} />
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
                     {(!mood || !diaryText) && (
                       <Typography variant="caption" color="text.secondary">
@@ -884,8 +1018,34 @@ const handleSendMessage = async (textArg) => {
                 </Box>
               )}
             </Box>
-            <Box sx={{ p: 2, borderTop: `1px solid ${tokens.border}`, display: 'flex', gap: 1, bgcolor: tokens.surfaceMuted }}>
-              <TextField fullWidth placeholder="Type your message..." variant="outlined" size="small" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} inputProps={{ maxLength: 4000 }} />
+            <Box sx={{ p: 2, borderTop: `1px solid ${tokens.border}`, display: 'flex', gap: 1, alignItems: 'center', bgcolor: tokens.surfaceMuted }}>
+              <Tooltip title={isListening ? 'Stop listening' : 'Speak your message'}>
+                <span>
+                  <IconButton
+                    onClick={toggleDictation}
+                    aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                    sx={{
+                      border: `1px solid ${isListening ? tokens.teal : tokens.border}`,
+                      color: isListening ? '#FFFFFF' : 'text.secondary',
+                      background: isListening ? fx.tealGradient : 'transparent',
+                    }}
+                  >
+                    {isListening ? <Mic /> : <MicNone />}
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <TextField fullWidth placeholder={isListening ? 'Listening… speak now' : 'Type or tap the mic to speak…'} variant="outlined" size="small" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} inputProps={{ maxLength: 4000 }} />
+              <Tooltip title={readAloud ? 'Read replies aloud: on' : 'Read replies aloud: off'}>
+                <span>
+                  <IconButton
+                    onClick={() => { const next = !readAloud; setReadAloud(next); if (!next) stopSpeaking(); }}
+                    aria-label="Toggle reading replies aloud"
+                    color={readAloud ? 'primary' : 'default'}
+                  >
+                    {readAloud ? <VolumeUp /> : <VolumeOff />}
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Button variant="contained" onClick={handleSendMessage} disabled={isLoading}>Send</Button>
             </Box>
           </TabPanel>
@@ -1073,15 +1233,15 @@ const handleSendMessage = async (textArg) => {
                           {activeLesson.exercise.fields.map((f) => (
                             <Box key={f.key}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.75 }}>{f.label}</Typography>
-                              <TextField
+                              <VoiceTextField
                                 fullWidth
                                 multiline
                                 minRows={2}
                                 placeholder={f.placeholder || ''}
                                 variant="outlined"
                                 value={exerciseAnswers[f.key] || ''}
-                                onChange={(e) => setExerciseField(f.key, e.target.value)}
-                                inputProps={{ maxLength: 2000 }}
+                                onValueChange={(v) => setExerciseField(f.key, v)}
+                                maxLength={2000}
                               />
                             </Box>
                           ))}
@@ -1110,14 +1270,14 @@ const handleSendMessage = async (textArg) => {
                           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.75 }}>
                             {activeLesson.exercise.notesLabel || 'Notes'}
                           </Typography>
-                          <TextField
+                          <VoiceTextField
                             fullWidth
                             multiline
                             minRows={3}
                             variant="outlined"
                             value={exerciseAnswers.notes || ''}
-                            onChange={(e) => setExerciseField('notes', e.target.value)}
-                            inputProps={{ maxLength: 2000 }}
+                            onValueChange={(v) => setExerciseField('notes', v)}
+                            maxLength={2000}
                           />
                         </Box>
                       )}
@@ -1180,7 +1340,7 @@ const handleSendMessage = async (textArg) => {
                       <Typography variant="body1" mb={3} fontWeight={600} sx={{ lineHeight: 1.6 }}>
                         {activeLesson.reflection_prompt}
                       </Typography>
-                      <TextField fullWidth multiline rows={4} placeholder="Write your intention…" variant="outlined" value={blueprintData} onChange={(e) => setBlueprintData(e.target.value)} inputProps={{ maxLength: 2000 }} />
+                      <VoiceTextField fullWidth multiline rows={4} placeholder="Write your intention…" variant="outlined" value={blueprintData} onValueChange={setBlueprintData} maxLength={2000} />
 
                       {/* #3 — AI response to the takeaway the user just wrote */}
                       <Box sx={{ mt: 3 }}>
