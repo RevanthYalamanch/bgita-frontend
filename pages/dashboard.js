@@ -514,17 +514,36 @@ const handleSendMessage = async (textArg) => {
     });
   };
 
-  // Build the internal coaching context for a lesson: the goal, what the exercise
-  // asked, and the curriculum's ai_prompt_context. Sent (never shown) so the
-  // model's reflection is grounded in THIS lesson rather than generic (#2).
+  // Build the internal coaching brief for a lesson (sent as `context`, never
+  // shown). Mirrors the Learn → Practice sections the user just walked through so
+  // the reflection can connect their answers to the SPECIFIC insight taught —
+  // crucially including the concept the lesson teaches (bridge) and its worked
+  // example, which the old context omitted. reflection_prompt is added by each
+  // caller instead, with mode-appropriate framing.
   const buildLessonContext = (lesson) => {
     if (!lesson) return '';
+    const c = lesson.concept || {};
+    const ex = lesson.exercise || {};
+    // Describe what each answer field was for, so the guide reads the answers with
+    // their intent (e.g. "Situation = just the facts a camera saw"). For chip
+    // exercises, list the full option set so it can react to what they didn't pick.
+    let fieldIntents = '';
+    if (ex.type === 'chips' && ex.options) {
+      fieldIntents = `They chose from these options: ${ex.options.join('; ')}`;
+    } else if (ex.fields) {
+      fieldIntents = ex.fields
+        .map(f => `- ${f.label}${f.placeholder ? ` (e.g. ${f.placeholder})` : ''}`)
+        .join('\n');
+    }
     return [
-      lesson.objective ? `Lesson goal: ${lesson.objective}` : '',
-      lesson.exercise && lesson.exercise.instructions
-        ? `What the exercise asked them to do: ${lesson.exercise.instructions}`
-        : '',
-      lesson.ai_prompt_context || '',
+      lesson.skill ? `Skill: ${lesson.skill}` : '',
+      lesson.objective ? `Goal: ${lesson.objective}` : '',
+      c.bridge ? `\nThe insight we taught them:\n${c.bridge}` : '',
+      c.example ? `\nThe worked example we showed them:\n${c.example}` : '',
+      ex.instructions ? `\nThe exercise asked them to: ${ex.instructions}` : '',
+      fieldIntents ? `\nWhat each answer was for:\n${fieldIntents}` : '',
+      lesson.safety_note ? `\nGuardrail for this lesson (honor it): ${lesson.safety_note}` : '',
+      lesson.ai_prompt_context ? `\nCoaching steer: ${lesson.ai_prompt_context}` : '',
     ].filter(Boolean).join('\n');
   };
 
@@ -551,7 +570,12 @@ const handleSendMessage = async (textArg) => {
           skill: activeLesson.skill || '',
           title: activeLesson.title || '',
           answers: formatExerciseAnswers(activeLesson, exerciseAnswers),
-          context: buildLessonContext(activeLesson),
+          context: [
+            buildLessonContext(activeLesson),
+            activeLesson.reflection_prompt
+              ? `Next, on the Commit step, they'll answer: ${activeLesson.reflection_prompt}`
+              : '',
+          ].filter(Boolean).join('\n'),
           mode: 'reflect',
         }),
       });
