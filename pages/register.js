@@ -35,13 +35,22 @@ export default function Register() {
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to create account.");
+        throw new Error(data.detail || "Failed to create account.");
+      }
+
+      // If they entered an admin code but the server still assigned "user", the
+      // code wasn't accepted (wrong code, or ADMIN_SIGNUP_CODE unset on the
+      // server). Tell them now, so they don't discover it later as "Access Denied".
+      if (adminCode && data.role !== 'admin') {
+        setError("Your account was created, but the admin code wasn't recognized — you're registered as a standard user. Sign in normally, or check the code with your administrator.");
+        return;
       }
 
       // Success! Route them back to the login page
-      alert("Account created successfully! Please log in.");
+      alert(`Account created successfully${data.role === 'admin' ? ' as an administrator' : ''}! Please log in.`);
       router.push('/');
 
     } catch (err) {

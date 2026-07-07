@@ -32,8 +32,25 @@ export default function Login() {
         throw new Error(data.detail || "Invalid email or password.");
       }
 
-      // Success! Push to dashboard
-      router.push('/dashboard');
+      // Enforce the admin/user toggle before persisting the session.
+      const isActuallyAdmin = data.user?.role && data.user.role.includes('admin');
+      if (loginMode === 'admin' && !isActuallyAdmin) {
+        throw new Error("Access Denied: You do not have administrator privileges.");
+      }
+
+      // Persist the session so the dashboard/admin pages (which read these on
+      // mount) see an authenticated user. Without this the user landed on a
+      // page with no token and was bounced straight back to login.
+      localStorage.setItem('user', JSON.stringify({
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
+      }));
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+      }
+
+      router.push(loginMode === 'admin' ? '/admin' : '/dashboard');
 
     } catch (err) {
       setError(err.message);

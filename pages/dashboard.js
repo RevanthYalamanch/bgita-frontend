@@ -432,18 +432,29 @@ const handleSendMessage = async (textArg) => {
     // 🛡️ SAFE EXTRACTION: Grab the email safely before hitting the network
     const userString = localStorage.getItem('user');
     const userEmail = userString ? JSON.parse(userString).email : "unknown_user";
+    const token = localStorage.getItem('token');
 
     try {
       const response = await fetch(`/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           message: userText,
           session_id: sessionId,
-          email: userEmail, // 👈 Use the safe variable here
+          email: userEmail, // server overrides this with the token identity
           history,
         }),
       });
+      // Auth is now required for chat: on an expired/invalid session the backend
+      // returns 401 as JSON (not a stream), so surface a clear message instead of
+      // rendering raw JSON into the transcript.
+      if (response.status === 401) {
+        setChatMessages(prev => [...prev, { role: 'ai', content: "Your session has expired. Please log out and log back in to keep chatting." }]);
+        return;
+      }
       await streamInto(response, setChatMessages);
     } catch (error) {
       setChatMessages(prev => [...prev, { role: 'ai', content: "Network error connecting to bridge." }]);

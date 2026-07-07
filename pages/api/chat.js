@@ -14,6 +14,9 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // Forward the caller's bearer token so the backend can authenticate the
+        // chat request (identity comes from the token, not the body email).
+        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
         ...(clientIp ? { 'X-Forwarded-For': clientIp } : {}),
       },
       body: JSON.stringify(req.body),
