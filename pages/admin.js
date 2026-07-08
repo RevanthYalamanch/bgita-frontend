@@ -9,6 +9,7 @@ import { alpha } from '@mui/material/styles';
 import { ArrowBack, Speed, MenuBook, Mood, WarningAmber, Refresh, Close } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 import ThemeToggle from '../components/ThemeToggle';
+import { apiFetch } from '../lib/api';
 
 // A quick helper to show tabs
 function TabPanel(props) {
@@ -127,7 +128,7 @@ export default function AdminDashboard() {
     setError(null);
     try {
       // The bridge file forwards to the Python endpoint.
-      const response = await fetch('/api/admin', {
+      const response = await apiFetch('/api/admin', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -174,7 +175,7 @@ export default function AdminDashboard() {
     setPatientLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/admin/patient?email=${encodeURIComponent(email)}`, {
+      const res = await apiFetch(`/api/admin/patient?email=${encodeURIComponent(email)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await res.json();

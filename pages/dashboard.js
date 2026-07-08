@@ -8,6 +8,7 @@ import {
 import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person, Mic, MicNone, VolumeUp, VolumeOff } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 import { isDictationSupported, createDictation, speak, stopSpeaking } from '../lib/voice';
+import { apiFetch } from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 
 // 🗂️ Import your new curriculum database!
@@ -447,7 +448,7 @@ export default function Dashboard() {
     // local mirror already showed; if the request fails, the mirror stands.
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('/api/lesson/progress', { headers: { Authorization: `Bearer ${token}` } })
+      apiFetch('/api/lesson/progress', { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (data && Number.isFinite(data.unlocked_level)) {
@@ -462,7 +463,7 @@ export default function Dashboard() {
 
       // Pull saved lesson answers so reviewing/redoing a lesson shows what the
       // user wrote last time (#3).
-      fetch('/api/lesson/answers', { headers: { Authorization: `Bearer ${token}` } })
+      apiFetch('/api/lesson/answers', { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (data && data.answers) setSavedAnswers(data.answers);
@@ -471,7 +472,7 @@ export default function Dashboard() {
 
       // Pull past daily check-ins so the user can view previous diaries and so we
       // know whether they've already checked in today (6/29 #1).
-      fetch('/api/logs', { headers: { Authorization: `Bearer ${token}` } })
+      apiFetch('/api/logs', { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (data && Array.isArray(data.entries)) setDiaryEntries(data.entries);
@@ -511,7 +512,7 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await fetch('/api/logs', {
+      const response = await apiFetch('/api/logs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -568,7 +569,7 @@ const handleSendMessage = async (textArg) => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`/api/chat`, {
+      const response = await apiFetch(`/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -696,7 +697,7 @@ const handleSendMessage = async (textArg) => {
     setAnalysisLoading(true);
     setAnalysisText('');
     try {
-      const response = await fetch('/api/lesson/analyze', {
+      const response = await apiFetch('/api/lesson/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -738,7 +739,7 @@ const handleSendMessage = async (textArg) => {
       const promptLine = activeLesson.reflection_prompt
         ? `The prompt they answered: ${activeLesson.reflection_prompt}`
         : '';
-      const response = await fetch('/api/lesson/analyze', {
+      const response = await apiFetch('/api/lesson/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -797,7 +798,7 @@ const handleSendMessage = async (textArg) => {
     // 3. Persist to the server in the background. A failure is logged but does not
     //    trap the user on the lesson page — progress is already mirrored locally.
     try {
-      const response = await fetch('/api/lesson', {
+      const response = await apiFetch('/api/lesson', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

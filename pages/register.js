@@ -4,6 +4,7 @@ import { Box, Typography, TextField, Button, Paper, Alert, CircularProgress } fr
 import { Psychology } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 import ThemeToggle from '../components/ThemeToggle';
+import { apiFetch } from '../lib/api';
 
 export default function Register() {
   const router = useRouter();
@@ -20,10 +21,9 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-      // Sending the registration request to FastAPI
-      const response = await fetch(`${BACKEND_URL}/api/register`, {
+      // On web this hits the Next.js proxy at /api/register; on native
+      // (Capacitor) apiFetch redirects it straight to FastAPI. See lib/api.js.
+      const response = await apiFetch(`/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

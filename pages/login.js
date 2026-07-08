@@ -4,6 +4,7 @@ import { Box, Typography, TextField, Button, Paper, Alert, CircularProgress } fr
 import { Psychology } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 import ThemeToggle from '../components/ThemeToggle';
+import { apiFetch } from '../lib/api';
 
 export default function Login() {
   const router = useRouter();
@@ -18,9 +19,9 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // 🗣️ This talks to your Next.js Bridge (File 2), NOT the Python server!
-      // CORRECT: This talks to your internal Next.js bridge
-      const response = await fetch(`/api/login`, {
+      // On web this hits the Next.js proxy at /api/login; on native (Capacitor)
+      // apiFetch redirects it straight to the Python backend. See lib/api.js.
+      const response = await apiFetch(`/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email, password: password }),
