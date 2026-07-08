@@ -1,3 +1,6 @@
 node_modules/
 .next/
 out/
+
+# local env overrides (Next.js convention) — keep committed .env for shared defaults
+.env*.local
