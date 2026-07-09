@@ -6,7 +6,7 @@ import {
   Tabs, Tab, Alert, Badge, Dialog, DialogTitle, DialogContent, IconButton, Divider
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { ArrowBack, Speed, MenuBook, Mood, WarningAmber, Refresh, Close } from '@mui/icons-material';
+import { ArrowBack, Speed, MenuBook, Mood, WarningAmber, Refresh, Close, SelfImprovement } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 import ThemeToggle from '../components/ThemeToggle';
 import { apiFetch } from '../lib/api';
@@ -24,6 +24,24 @@ function fmtDate(value) {
   const d = new Date(value);
   return isNaN(d.getTime()) ? '—' : d.toLocaleString();
 }
+
+// Friendly names for the SOS/coping-tool ids the backend stores.
+const TOOL_LABELS = {
+  breathing: 'Guided Breathing',
+  grounding: '5-4-3-2-1 Grounding',
+  urge: 'Urge Surfing',
+  tipp: 'TIPP Reset',
+};
+const toolLabel = (id) => TOOL_LABELS[id] || id;
+
+// A distress drop (pre − post SUDS). ↓ = distress fell (relief), ↑ = rose,
+// null = no rated sessions yet.
+const fmtDrop = (v) => {
+  if (v == null) return '—';
+  if (v > 0) return `↓ ${v} pts`;
+  if (v < 0) return `↑ ${Math.abs(v)} pts`;
+  return '0 pts';
+};
 
 // Theme-aware mood chip styling (works in light AND dark mode, unlike the old
 // hardcoded hex). mood ≤2 = error, 3 = warning, ≥4 = success.
@@ -115,6 +133,7 @@ export default function AdminDashboard() {
     lessons: [],
     logs: [],
     crisis: [],
+    tools: [],
   });
 
   // Per-patient drill-down dialog
@@ -146,6 +165,7 @@ export default function AdminDashboard() {
           lessons: result.data.lessons || [],
           logs: result.data.logs || [],
           crisis: result.data.crisis || [],
+          tools: result.data.tools || [],
         });
       } else {
         setError(result.message || 'The server returned an unexpected response.');
@@ -226,6 +246,8 @@ export default function AdminDashboard() {
             <StatCard label="Avg Latency" value={`${s.avg_latency_sec ?? 0}s`} />
             <StatCard label="Lessons Done" value={s.lessons_completed ?? 0} />
             <StatCard label="Avg Mood" value={`${s.avg_mood ?? 0} / 5`} />
+            <StatCard label="Tool Uses" value={s.tool_sessions ?? 0} />
+            <StatCard label="Avg Distress Drop" value={fmtDrop(s.avg_distress_drop)} />
             <StatCard label="Safety Alerts" value={s.crisis_count ?? crisisCount} alert={(s.crisis_count ?? crisisCount) > 0} />
           </Box>
         )}
@@ -246,6 +268,7 @@ export default function AdminDashboard() {
               label="Safety Alerts"
               sx={{ color: crisisCount > 0 ? 'error.main' : undefined }}
             />
+            <Tab icon={<SelfImprovement />} iconPosition="start" label="Coping Tools" />
           </Tabs>
 
           {isLoading ? (
@@ -365,6 +388,37 @@ export default function AdminDashboard() {
                 </TableContainer>
               </TabPanel>
 
+              {/* TAB 5: COPING TOOLS (SOS/Reset usage + outcomes) */}
+              <TabPanel value={tabValue} index={4}>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Tool</TableCell>
+                        <TableCell align="right">Times Used</TableCell>
+                        <TableCell align="right">Avg Distress Drop</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {dashboardData.tools.length === 0 ? (
+                        <TableRow><TableCell colSpan={3} align="center">No coping-tool sessions yet.</TableCell></TableRow>
+                      ) : dashboardData.tools.map((row, i) => (
+                        <TableRow key={i}>
+                          <TableCell sx={{ fontWeight: 700 }}>{toolLabel(row.tool_id)}</TableCell>
+                          <TableCell align="right">{row.uses}</TableCell>
+                          <TableCell align="right" sx={{ color: row.avg_drop > 0 ? 'success.main' : (row.avg_drop < 0 ? 'error.main' : 'text.secondary') }}>
+                            {fmtDrop(row.avg_drop)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+                  Distress drop = average of each user's self-rating before minus after (0–10). ↓ means distress fell. Blank when a session wasn&apos;t rated.
+                </Typography>
+              </TabPanel>
+
             </Box>
           )}
         </Paper>
@@ -388,6 +442,7 @@ export default function AdminDashboard() {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                   <StatCard label="Chats" value={patientData.chat_count ?? 0} />
                   <StatCard label="Lessons" value={patientData.lessons?.length ?? 0} />
+                  <StatCard label="Tool Uses" value={patientData.tool_count ?? 0} />
                   <StatCard label="Safety Alerts" value={patientData.crisis_count ?? 0} alert={(patientData.crisis_count ?? 0) > 0} />
                 </Box>
 
@@ -399,6 +454,24 @@ export default function AdminDashboard() {
                 <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
                   Last Active: <Box component="span" sx={{ fontWeight: 400, color: 'text.secondary' }}>{fmtDate(patientData.last_active)}</Box>
                 </Typography>
+
+                {patientData.tools?.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Coping Tools Used</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {patientData.tools.map((t, i) => (
+                        <Box key={i} component="span" sx={{ bgcolor: tokens.surfaceHover, color: tokens.textPrimary, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 1, border: `1px solid ${tokens.border}`, fontSize: '0.8rem' }}>
+                          {toolLabel(t.tool_id)} ×{t.uses}
+                          {t.avg_drop != null && (
+                            <Box component="span" sx={{ ml: 0.75, fontWeight: 400, color: t.avg_drop > 0 ? 'success.main' : (t.avg_drop < 0 ? 'error.main' : 'text.secondary') }}>
+                              {fmtDrop(t.avg_drop)}
+                            </Box>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
 
                 {patientData.lessons?.length > 0 && (
                   <Box sx={{ mt: 2 }}>

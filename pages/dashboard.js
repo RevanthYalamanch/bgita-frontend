@@ -10,6 +10,7 @@ import { fx, tokens } from '../lib/theme';
 import { isDictationSupported, createDictation, speak, stopSpeaking } from '../lib/voice';
 import { apiFetch } from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
+import SosLauncher from '../components/sos/SosLauncher';
 
 // 🗂️ Import your new curriculum database!
 import { LESSON_DATA, TRACKS } from '../data/curriculum';
@@ -1394,6 +1395,9 @@ const handleSendMessage = async (textArg) => {
           </TabPanel>
 
         </Paper>
+
+        {/* Always-available in-the-moment coping toolkit (FAB + modal). */}
+        <SosLauncher sessionId={sessionId} />
       </Box>
   );
 }
