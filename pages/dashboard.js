@@ -5,12 +5,13 @@ import {
   Typography, Button, TextField, Paper, Avatar, Alert,
   Stepper, Step, StepLabel, StepButton, Divider, Chip, Link, LinearProgress // 👈 Added Chip, Link, LinearProgress
 } from '@mui/material';
-import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person, Mic, MicNone, VolumeUp, VolumeOff } from '@mui/icons-material';
+import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person, Mic, MicNone, VolumeUp, VolumeOff, FactCheck } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 import { isDictationSupported, createDictation, speak, stopSpeaking } from '../lib/voice';
 import { apiFetch } from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import SosLauncher from '../components/sos/SosLauncher';
+import AssessmentCenter from '../components/assessment/AssessmentCenter';
 
 // 🗂️ Import your new curriculum database!
 import { LESSON_DATA, TRACKS } from '../data/curriculum';
@@ -313,6 +314,31 @@ const MOOD_OPTIONS = [
 ];
 const MOOD_BY_VALUE = Object.fromEntries(MOOD_OPTIONS.map((m) => [String(m.v), m]));
 
+// Optional richer check-in context. All are controlled vocabularies so the data
+// stays clean for the clinician view; the backend stores emotions/activities as
+// delimiter-joined text and energy as a 1-5 rating. None of these gate saving —
+// a mood + a few words is still a complete entry.
+const EMOTION_OPTIONS = [
+  'Anxious', 'Sad', 'Angry', 'Calm', 'Happy', 'Grateful',
+  'Lonely', 'Stressed', 'Hopeful', 'Tired', 'Irritable', 'Content',
+];
+const ACTIVITY_OPTIONS = [
+  'Work', 'Study', 'Exercise', 'Social', 'Family', 'Rest',
+  'Outdoors', 'Chores', 'Hobby', 'Screen time', 'Meditation', 'Poor sleep',
+];
+const ENERGY_OPTIONS = [
+  { v: 1, label: 'Depleted' },
+  { v: 2, label: 'Low' },
+  { v: 3, label: 'Steady' },
+  { v: 4, label: 'Good' },
+  { v: 5, label: 'Energized' },
+];
+const SLEEP_OPTIONS = ['Poor', 'Restless', 'Okay', 'Good', 'Great'];
+
+// Toggle a value in/out of a multi-select array (for the emotion/activity chips).
+const toggleInArray = (arr, value) =>
+  arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];
+
 // Format an ISO timestamp as a friendly diary date (e.g. "Mon, Jun 30").
 function formatDiaryDate(ts) {
   const d = new Date(ts);
@@ -345,6 +371,11 @@ export default function Dashboard() {
   const [mood, setMood] = useState(null);
   const [diaryText, setDiaryText] = useState('');
   const [diarySaved, setDiarySaved] = useState(false);
+  // Optional richer check-in context (all default to "unset"; never gate save).
+  const [emotions, setEmotions] = useState([]);
+  const [energy, setEnergy] = useState(null);
+  const [sleep, setSleep] = useState('');
+  const [activities, setActivities] = useState([]);
   // Past daily check-ins (most recent first) so the user can view previous
   // diaries; also used to detect whether they've already checked in today (6/29
   // #1 — one entry per day). `diaryView` toggles the Diary tab between writing a
@@ -520,7 +551,16 @@ export default function Dashboard() {
           Authorization: `Bearer ${token}`,
         },
         // The backend derives the user from the token; email here is ignored.
-        body: JSON.stringify({ mood_score: mood, diary_text: diaryText }),
+        // Rich fields are optional — only send the ones the user actually set so
+        // an untouched check-in is byte-identical to the old minimal payload.
+        body: JSON.stringify({
+          mood_score: mood,
+          diary_text: diaryText,
+          ...(emotions.length ? { emotions } : {}),
+          ...(energy ? { energy } : {}),
+          ...(sleep ? { sleep } : {}),
+          ...(activities.length ? { activities } : {}),
+        }),
       });
 
       if (!response.ok) {
@@ -538,12 +578,19 @@ export default function Dashboard() {
       // Record the new entry locally so it shows up immediately in "previous
       // diaries" and keeps the form locked for the rest of the day.
       setDiaryEntries((prev) => [
-        { mood: String(mood), reflection: diaryText, timestamp: new Date().toISOString() },
+        {
+          mood: String(mood), reflection: diaryText, timestamp: new Date().toISOString(),
+          emotions, energy, sleep, activities,
+        },
         ...prev,
       ]);
       setDiarySaved(true);
       setMood(null);
       setDiaryText('');
+      setEmotions([]);
+      setEnergy(null);
+      setSleep('');
+      setActivities([]);
     } catch (error) {
       console.error("Failed to save journal entry:", error);
       alert("Could not save your entry. Please check your connection.");
@@ -865,6 +912,7 @@ const handleSendMessage = async (textArg) => {
               <Tab icon={<Create />} iconPosition="start" label="Diary" />
               <Tab icon={<ChatIcon />} iconPosition="start" label="General Chat" />
               <Tab icon={<MenuBook />} iconPosition="start" label="Curriculum" />
+              <Tab icon={<FactCheck />} iconPosition="start" label="Check-Up" />
             </Tabs>
           )}
 
@@ -905,6 +953,29 @@ const handleSendMessage = async (textArg) => {
                               {entry.reflection}
                             </Typography>
                           )}
+                          {(() => {
+                            // Rich fields are only present on newer entries (older
+                            // rows read back empty/absent); render them if any exist.
+                            const em = Array.isArray(entry.emotions) ? entry.emotions : [];
+                            const acts = Array.isArray(entry.activities) ? entry.activities : [];
+                            const en = ENERGY_OPTIONS.find((o) => o.v === entry.energy);
+                            const chips = [...em, ...acts];
+                            if (!chips.length && !en && !entry.sleep) return null;
+                            return (
+                              <Box sx={{ mt: 1.25, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75 }}>
+                                {chips.map((c, ci) => (
+                                  <Chip key={ci} label={c} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                                ))}
+                                {(en || entry.sleep) && (
+                                  <Typography variant="caption" color="text.secondary" sx={{ ml: chips.length ? 0.5 : 0 }}>
+                                    {en ? `Energy: ${en.label}` : ''}
+                                    {en && entry.sleep ? ' · ' : ''}
+                                    {entry.sleep ? `Sleep: ${entry.sleep}` : ''}
+                                  </Typography>
+                                )}
+                              </Box>
+                            );
+                          })()}
                         </Paper>
                       );
                     })}
@@ -962,6 +1033,83 @@ const handleSendMessage = async (textArg) => {
                         </Box>
                       );
                     })}
+                  </Box>
+
+                  {/* Optional richer context — none of this is required to save. */}
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    Any emotions standing out? <Box component="span" sx={{ color: 'text.disabled', fontWeight: 400 }}>(optional)</Box>
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 3 }}>
+                    {EMOTION_OPTIONS.map((e) => (
+                      <Chip
+                        key={e}
+                        label={e}
+                        onClick={() => setEmotions((prev) => toggleInArray(prev, e))}
+                        color={emotions.includes(e) ? 'primary' : 'default'}
+                        variant={emotions.includes(e) ? 'filled' : 'outlined'}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    ))}
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    Energy level <Box component="span" sx={{ color: 'text.disabled', fontWeight: 400 }}>(optional)</Box>
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, mb: 3 }}>
+                    {ENERGY_OPTIONS.map((opt) => {
+                      const selected = energy === opt.v;
+                      return (
+                        <Box
+                          key={opt.v}
+                          component="button"
+                          type="button"
+                          onClick={() => setEnergy(selected ? null : opt.v)}
+                          sx={{
+                            flex: 1, minWidth: 0, py: 1, px: 0.5, cursor: 'pointer', fontFamily: 'inherit',
+                            borderRadius: '12px', transition: 'all .18s ease',
+                            background: selected ? 'rgba(45,212,191,0.12)' : tokens.surfaceMuted,
+                            border: `1px solid ${selected ? tokens.teal : tokens.border}`,
+                            color: selected ? tokens.teal : tokens.textSecondary,
+                            fontWeight: 700, fontSize: { xs: '0.62rem', sm: '0.72rem' },
+                            '&:hover': { borderColor: tokens.borderStrong },
+                          }}
+                        >
+                          {opt.label}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    How did you sleep? <Box component="span" sx={{ color: 'text.disabled', fontWeight: 400 }}>(optional)</Box>
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 3 }}>
+                    {SLEEP_OPTIONS.map((s) => (
+                      <Chip
+                        key={s}
+                        label={s}
+                        onClick={() => setSleep((prev) => (prev === s ? '' : s))}
+                        color={sleep === s ? 'primary' : 'default'}
+                        variant={sleep === s ? 'filled' : 'outlined'}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    ))}
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    What did your day involve? <Box component="span" sx={{ color: 'text.disabled', fontWeight: 400 }}>(optional)</Box>
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 4 }}>
+                    {ACTIVITY_OPTIONS.map((a) => (
+                      <Chip
+                        key={a}
+                        label={a}
+                        onClick={() => setActivities((prev) => toggleInArray(prev, a))}
+                        color={activities.includes(a) ? 'primary' : 'default'}
+                        variant={activities.includes(a) ? 'filled' : 'outlined'}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    ))}
                   </Box>
 
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>What&apos;s on your mind?</Typography>
@@ -1392,6 +1540,13 @@ const handleSendMessage = async (textArg) => {
 
               </Box>
             )}
+          </TabPanel>
+
+          {/* 🩺 CHECK-UP — standardized PHQ-9 / GAD-7 screenings */}
+          <TabPanel value={tabValue} index={3}>
+            <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 780, mx: 'auto' }}>
+              <AssessmentCenter sessionId={sessionId} />
+            </Box>
           </TabPanel>
 
         </Paper>
