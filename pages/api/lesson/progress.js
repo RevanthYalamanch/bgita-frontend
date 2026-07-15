@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ detail: 'Method Not Allowed' });
   }
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
   const auth = req.headers.authorization ? { Authorization: req.headers.authorization } : {};
 
   try {

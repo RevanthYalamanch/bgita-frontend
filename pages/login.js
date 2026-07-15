@@ -13,6 +13,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Track whether they are logging in as a 'user' (patient) or 'admin' (clinician).
+  const [loginMode, setLoginMode] = useState('user');
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -75,8 +78,30 @@ export default function Login() {
         </Box>
 
         <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, ...fx.glassCard }}>
+
+          {/* Patient / Clinician segmented control */}
+          <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: '12px', bgcolor: tokens.surfaceHover, border: `1px solid ${tokens.border}` }}>
+            {[{ k: 'user', label: 'Patient' }, { k: 'admin', label: 'Clinician' }].map((opt) => (
+              <Box
+                key={opt.k}
+                component="button"
+                type="button"
+                onClick={() => setLoginMode(opt.k)}
+                sx={{
+                  flex: 1, py: 1.1, borderRadius: '10px', border: 'none', cursor: 'pointer',
+                  fontFamily: 'inherit', fontWeight: 700, fontSize: '0.9rem', transition: 'all .2s ease',
+                  color: loginMode === opt.k ? '#FFFFFF' : 'text.secondary',
+                  background: loginMode === opt.k ? fx.tealGradient : 'transparent',
+                  boxShadow: loginMode === opt.k ? '0 1px 2px rgba(15,23,42,0.12)' : 'none',
+                }}
+              >
+                {opt.label}
+              </Box>
+            ))}
+          </Box>
+
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-            Welcome back. Sign in to continue your journey.
+            {loginMode === 'admin' ? 'Sign in to the clinician portal.' : 'Welcome back. Sign in to continue your journey.'}
           </Typography>
 
           {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -96,7 +121,7 @@ export default function Login() {
               sx={{ py: 1.4, fontWeight: 700 }}
               disabled={isLoading}
             >
-              {isLoading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : (loginMode === 'admin' ? 'Enter Clinician Portal' : 'Sign In')}
             </Button>
           </form>
 

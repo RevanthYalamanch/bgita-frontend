@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
     const auth = req.headers.authorization ? { Authorization: req.headers.authorization } : {};
     // Forward the real client IP so the backend rate-limits per user.
     const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').toString();
