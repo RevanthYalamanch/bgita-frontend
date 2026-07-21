@@ -286,7 +286,7 @@ function TypingIndicator({ small }) {
   return (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
       <Avatar sx={{ background: fx.tealGradient, color: '#FFFFFF', width: small ? 32 : 40, height: small ? 32 : 40 }}><Psychology sx={{ fontSize: small ? 18 : 22 }} /></Avatar>
-      <Paper elevation={0} sx={{ px: 2, py: 1.5, border: 'none', background: tokens.surfaceHover, borderRadius: '14px', display: 'flex', gap: 0.75, alignItems: 'center' }}>
+      <Paper elevation={0} sx={{ px: 2, py: 1.5, border: 'none', background: tokens.surfaceHover, borderRadius: 0, display: 'flex', gap: 0.75, alignItems: 'center' }}>
         <Box sx={dot('0s')} />
         <Box sx={dot('0.15s')} />
         <Box sx={dot('0.3s')} />
@@ -912,7 +912,7 @@ const handleSendMessage = async (textArg) => {
         {/* HEADER */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.25, sm: 1.75 }, minWidth: 0 }}>
-            <Box sx={{ width: { xs: 38, sm: 44 }, height: { xs: 38, sm: 44 }, flexShrink: 0, borderRadius: '12px', display: 'grid', placeItems: 'center', color: '#FFFFFF', background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: { xs: 21, sm: 25 } }} /></Box>
+            <Box sx={{ width: { xs: 38, sm: 44 }, height: { xs: 38, sm: 44 }, flexShrink: 0, borderRadius: 0, display: 'grid', placeItems: 'center', color: '#FFFFFF', background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: { xs: 21, sm: 25 } }} /></Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="h5" fontWeight={800} sx={{ ...fx.brandGradientText, lineHeight: 1.1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>Pl.AIto</Typography>
               <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.25 }}>
@@ -926,7 +926,7 @@ const handleSendMessage = async (textArg) => {
           </Box>
         </Box>
 
-        <Paper elevation={0} sx={{ ...fx.glassCard, borderRadius: '20px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <Paper elevation={0} sx={{ ...fx.glassCard, borderRadius: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
           {/* Hide tabs if we are inside an active lesson wizard */}
           {!activeLesson && (
@@ -981,7 +981,7 @@ const handleSendMessage = async (textArg) => {
                     {diaryEntries.map((entry, i) => {
                       const m = MOOD_BY_VALUE[String(entry.mood)];
                       return (
-                        <Paper key={i} elevation={0} sx={{ p: 2.5, borderRadius: '16px', background: tokens.surfaceMuted, border: `1px solid ${tokens.border}` }}>
+                        <Paper key={i} elevation={0} sx={{ p: 2.5, borderRadius: 0, background: tokens.surfaceMuted, border: `1px solid ${tokens.border}` }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: entry.reflection ? 1 : 0 }}>
                             <Box sx={{ fontSize: 22, lineHeight: 1 }}>{m ? m.emoji : '📝'}</Box>
                             <Typography variant="subtitle2" fontWeight={700}>{m ? m.label : 'Entry'}</Typography>
@@ -1026,7 +1026,7 @@ const handleSendMessage = async (textArg) => {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                     A small moment of awareness, once a day.
                   </Typography>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: '16px', textAlign: 'center', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 0, textAlign: 'center', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
                     <CheckCircle sx={{ color: 'primary.main', fontSize: 32, mb: 1 }} />
                     <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5 }}>You&apos;ve checked in today.</Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -1057,7 +1057,7 @@ const handleSendMessage = async (textArg) => {
                           type="button"
                           onClick={() => setMood(m.v)}
                           sx={{
-                            flex: 1, minWidth: 0, py: { xs: 1.25, sm: 2 }, px: 0.5, cursor: 'pointer', fontFamily: 'inherit', borderRadius: '16px',
+                            flex: 1, minWidth: 0, py: { xs: 1.25, sm: 2 }, px: 0.5, cursor: 'pointer', fontFamily: 'inherit', borderRadius: 0,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
                             transition: 'all .2s ease',
                             background: selected ? 'rgba(45,212,191,0.12)' : tokens.surfaceMuted,
@@ -1105,7 +1105,7 @@ const handleSendMessage = async (textArg) => {
                           onClick={() => setEnergy(selected ? null : opt.v)}
                           sx={{
                             flex: 1, minWidth: 0, py: 1, px: 0.5, cursor: 'pointer', fontFamily: 'inherit',
-                            borderRadius: '12px', transition: 'all .18s ease',
+                            borderRadius: 0, transition: 'all .18s ease',
                             background: selected ? 'rgba(45,212,191,0.12)' : tokens.surfaceMuted,
                             border: `1px solid ${selected ? tokens.teal : tokens.border}`,
                             color: selected ? tokens.teal : tokens.textSecondary,
@@ -1177,7 +1177,7 @@ const handleSendMessage = async (textArg) => {
               {chatMessages.map((msg, index) => (
                 <Box key={index} sx={{ display: 'flex', gap: 2, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
                   <Avatar sx={{ background: msg.role === 'user' ? tokens.border : fx.tealGradient, color: msg.role === 'user' ? 'text.secondary' : '#FFFFFF' }}>{msg.role === 'user' ? <Person fontSize="small" /> : <Psychology fontSize="small" />}</Avatar>
-                  <Paper elevation={0} sx={{ p: 2, border: 'none', background: msg.role === 'user' ? fx.tealGradient : tokens.surfaceHover, color: msg.role === 'user' ? '#FFFFFF' : 'text.primary', maxWidth: '80%', borderRadius: '16px', borderTopRightRadius: msg.role === 'user' ? '4px' : '16px', borderTopLeftRadius: msg.role === 'user' ? '16px' : '4px' }}>
+                  <Paper elevation={0} sx={{ p: 2, border: 'none', background: msg.role === 'user' ? fx.tealGradient : tokens.surfaceHover, color: msg.role === 'user' ? '#FFFFFF' : 'text.primary', maxWidth: '80%', borderRadius: 0, borderTopRightRadius: 0 , borderTopLeftRadius: 0 }}>
                     {msg.role === 'user'
                       ? <Typography sx={{ whiteSpace: 'pre-wrap' }}>{msg.content}</Typography>
                       : <MarkdownText content={msg.content} />}
@@ -1286,7 +1286,7 @@ const handleSendMessage = async (textArg) => {
                               elevation={0}
                               sx={{
                                 p: 2.5, mb: 1.5, display: 'flex', alignItems: 'center', gap: 2,
-                                borderRadius: '16px',
+                                borderRadius: 0,
                                 border: `1px solid ${isCurrent ? tokens.teal : tokens.border}`,
                                 background: isCurrent ? 'rgba(45,212,191,0.07)' : tokens.surfaceMuted,
                                 boxShadow: isCurrent ? fx.glow : 'none',
@@ -1297,7 +1297,7 @@ const handleSendMessage = async (textArg) => {
                             >
                               {/* Status badge */}
                               <Box sx={{
-                                width: 40, height: 40, flexShrink: 0, borderRadius: '12px', display: 'grid', placeItems: 'center', fontWeight: 800,
+                                width: 40, height: 40, flexShrink: 0, borderRadius: 0, display: 'grid', placeItems: 'center', fontWeight: 800,
                                 background: isDone ? fx.tealGradient : (isCurrent ? 'rgba(45,212,191,0.15)' : tokens.surfaceHover),
                                 color: isDone ? '#FFFFFF' : (isCurrent ? tokens.tealDark : 'text.secondary'),
                                 border: `1px solid ${isCurrent && !isDone ? tokens.teal : tokens.border}`,
@@ -1382,7 +1382,7 @@ const handleSendMessage = async (textArg) => {
                       )}
 
                       {/* Gita anchor callout */}
-                      <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: '14px', background: tokens.surfaceHover, borderLeft: `3px solid ${tokens.primary || '#2DD4BF'}` }}>
+                      <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: 0, background: tokens.surfaceHover, borderLeft: `3px solid ${tokens.primary || '#2DD4BF'}` }}>
                         <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                           {activeLesson.gita_anchor.ref}
                         </Typography>
@@ -1397,7 +1397,7 @@ const handleSendMessage = async (textArg) => {
                       </Box>
 
                       {/* Worked example */}
-                      <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                      <Paper elevation={0} sx={{ p: 2.5, borderRadius: 0, background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
                           In practice
                         </Typography>
@@ -1473,7 +1473,7 @@ const handleSendMessage = async (textArg) => {
 
                       {/* Safety note — gentle guardrail tied to this exercise */}
                       {activeLesson.safety_note && (
-                        <Paper elevation={0} sx={{ mt: 3, p: 2, borderRadius: '12px', display: 'flex', gap: 1.25, background: tokens.surfaceMuted, border: `1px solid ${tokens.border}` }}>
+                        <Paper elevation={0} sx={{ mt: 3, p: 2, borderRadius: 0, display: 'flex', gap: 1.25, background: tokens.surfaceMuted, border: `1px solid ${tokens.border}` }}>
                           <HelpOutline fontSize="small" sx={{ color: 'text.secondary', mt: '2px', flexShrink: 0 }} />
                           <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
                             {activeLesson.safety_note}
@@ -1503,7 +1503,7 @@ const handleSendMessage = async (textArg) => {
                         )}
 
                         {(analysisText || analysisLoading) && (
-                          <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                          <Paper elevation={0} sx={{ p: 2.5, borderRadius: 0, background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                               <AutoAwesome fontSize="small" sx={{ color: 'primary.main' }} />
                               <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -1545,7 +1545,7 @@ const handleSendMessage = async (textArg) => {
                         )}
 
                         {(takeawayText || takeawayLoading) && (
-                          <Paper elevation={0} sx={{ p: 2.5, borderRadius: '14px', background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
+                          <Paper elevation={0} sx={{ p: 2.5, borderRadius: 0, background: 'rgba(45,212,191,0.06)', border: `1px solid ${tokens.border}` }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                               <AutoAwesome fontSize="small" sx={{ color: 'primary.main' }} />
                               <Typography variant="caption" color="primary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -1604,7 +1604,7 @@ const handleSendMessage = async (textArg) => {
 
         {/* Confirmation dialog for permanent, irreversible account deletion. */}
         <Dialog open={deleteOpen} onClose={() => !deleteBusy && setDeleteOpen(false)}
-          PaperProps={{ sx: { ...fx.glassCard, borderRadius: '16px', p: 1 } }}>
+          PaperProps={{ sx: { ...fx.glassCard, borderRadius: 0, p: 1 } }}>
           <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 800, color: 'error.main' }}>
             <DeleteForever /> Delete your account?
           </DialogTitle>

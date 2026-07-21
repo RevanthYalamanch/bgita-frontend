@@ -46,7 +46,7 @@ export default function TippCard({ onNavigate }) {
               flexShrink: 0,
               width: 40,
               height: 40,
-              borderRadius: '10px',
+              borderRadius: 0,
               display: 'grid',
               placeItems: 'center',
               color: tokens.teal,

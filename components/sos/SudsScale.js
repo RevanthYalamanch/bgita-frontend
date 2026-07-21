@@ -44,7 +44,7 @@ export default function SudsScale({ prompt, onSelect, onSkip }) {
             aria-label={`Distress level ${v}`}
             sx={{
               aspectRatio: '1',
-              borderRadius: '10px',
+              borderRadius: 0,
               color: '#FFFFFF',
               fontWeight: 800,
               fontSize: { xs: '0.8rem', sm: '0.95rem' },

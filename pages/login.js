@@ -70,7 +70,7 @@ export default function Login() {
 
         {/* Brand */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-          <Box sx={{ width: 56, height: 56, borderRadius: '16px', display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
+          <Box sx={{ width: 56, height: 56, borderRadius: 0, display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
           <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Pl.AIto</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
             Ancient wisdom, reframed as modern CBT — in plain language.
@@ -80,7 +80,7 @@ export default function Login() {
         <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, ...fx.glassCard }}>
 
           {/* Patient / Clinician segmented control */}
-          <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: '12px', bgcolor: tokens.surfaceHover, border: `1px solid ${tokens.border}` }}>
+          <Box sx={{ display: 'flex', p: 0.5, mb: 3, borderRadius: 0, bgcolor: tokens.surfaceHover, border: `1px solid ${tokens.border}` }}>
             {[{ k: 'user', label: 'Patient' }, { k: 'admin', label: 'Clinician' }].map((opt) => (
               <Box
                 key={opt.k}
@@ -88,7 +88,7 @@ export default function Login() {
                 type="button"
                 onClick={() => setLoginMode(opt.k)}
                 sx={{
-                  flex: 1, py: 1.1, borderRadius: '10px', border: 'none', cursor: 'pointer',
+                  flex: 1, py: 1.1, borderRadius: 0, border: 'none', cursor: 'pointer',
                   fontFamily: 'inherit', fontWeight: 700, fontSize: '0.9rem', transition: 'all .2s ease',
                   color: loginMode === opt.k ? '#FFFFFF' : 'text.secondary',
                   background: loginMode === opt.k ? fx.tealGradient : 'transparent',

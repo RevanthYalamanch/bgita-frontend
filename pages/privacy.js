@@ -226,7 +226,7 @@ export default function Privacy() {
               sx={{
                 p: 2,
                 mb: 3,
-                borderRadius: 2,
+                borderRadius: 0,
                 background: tokens.surfaceMuted,
                 border: `1px solid ${tokens.border}`,
               }}

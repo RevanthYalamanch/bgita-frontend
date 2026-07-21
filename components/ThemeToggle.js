@@ -49,7 +49,7 @@ export default function ThemeToggle({ floating = false }) {
         bgcolor: 'background.paper',
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: '12px',
+        borderRadius: 0,
         boxShadow: 3,
       }}
     >

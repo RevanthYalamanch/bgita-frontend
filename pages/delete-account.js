@@ -191,7 +191,7 @@ export default function DeleteAccount() {
 
       {/* Confirmation dialog for the direct in-page deletion. */}
       <Dialog open={dialogOpen} onClose={() => !busy && setDialogOpen(false)}
-        PaperProps={{ sx: { ...fx.glassCard, borderRadius: '16px', p: 1 } }}>
+        PaperProps={{ sx: { ...fx.glassCard, borderRadius: 0, p: 1 } }}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 800, color: 'error.main' }}>
           <DeleteForever /> Delete your account?
         </DialogTitle>

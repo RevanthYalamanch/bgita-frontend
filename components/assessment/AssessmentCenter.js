@@ -234,7 +234,7 @@ export default function AssessmentCenter({ sessionId }) {
             variant="determinate"
             value={pct}
             color={band ? TONE_COLOR[band.tone] : 'primary'}
-            sx={{ mt: 2.5, height: 8, borderRadius: 4, maxWidth: 320, mx: 'auto' }}
+            sx={{ mt: 2.5, height: 8, borderRadius: 0, maxWidth: 320, mx: 'auto' }}
           />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2, maxWidth: 460, mx: 'auto' }}>
             This is a snapshot of the last two weeks — not a diagnosis. Retaking it over time shows how
@@ -269,7 +269,7 @@ export default function AssessmentCenter({ sessionId }) {
       </Button>
       <Typography variant="h6" fontWeight={800}>{meta.title}</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{meta.intro}</Typography>
-      <LinearProgress variant="determinate" value={progress} sx={{ height: 6, borderRadius: 3, mb: 2.5 }} />
+      <LinearProgress variant="determinate" value={progress} sx={{ height: 6, borderRadius: 0, mb: 2.5 }} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -287,7 +287,7 @@ export default function AssessmentCenter({ sessionId }) {
                     key={opt.value}
                     onClick={() => setAnswer(qi, opt.value)}
                     sx={{
-                      px: 1, py: 1.25, borderRadius: '10px', textAlign: 'center',
+                      px: 1, py: 1.25, borderRadius: 0, textAlign: 'center',
                       border: '1px solid',
                       borderColor: selected ? 'primary.main' : tokens.border,
                       bgcolor: selected ? 'primary.main' : 'transparent',

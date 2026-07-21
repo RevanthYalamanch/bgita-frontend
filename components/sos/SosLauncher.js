@@ -199,7 +199,7 @@ export default function SosLauncher({ sessionId }) {
         PaperProps={{
           sx: {
             ...fx.glassCard,
-            borderRadius: fullScreen ? 0 : '20px',
+            borderRadius: 0,
             m: fullScreen ? 0 : 2,
             display: 'flex',
             flexDirection: 'column',

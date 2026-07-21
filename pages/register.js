@@ -67,7 +67,7 @@ export default function Register() {
 
         {/* Brand */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-          <Box sx={{ width: 56, height: 56, borderRadius: '16px', display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
+          <Box sx={{ width: 56, height: 56, borderRadius: 0, display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
           <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Pl.AIto</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
             Start your journey to better mental wellbeing.
@@ -97,7 +97,7 @@ export default function Register() {
             />
 
             {/* 🕵️ THE SECRET ADMIN FIELD */}
-            <Box sx={{ mb: 4, p: 2, border: `1px dashed ${tokens.borderStrong}`, borderRadius: '12px', bgcolor: tokens.surfaceMuted }}>
+            <Box sx={{ mb: 4, p: 2, border: `1px dashed ${tokens.borderStrong}`, borderRadius: 0, bgcolor: tokens.surfaceMuted }}>
               <TextField
                 fullWidth label="Admin Access Code (Optional)" type="password" variant="standard"
                 value={adminCode} onChange={(e) => setAdminCode(e.target.value)}

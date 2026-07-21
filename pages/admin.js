@@ -52,7 +52,7 @@ function moodSx(theme, moodRaw) {
   return {
     bgcolor: alpha(c, 0.15),
     color: theme.palette.mode === 'dark' ? theme.palette[key].light || c : theme.palette[key].dark || c,
-    px: 1.5, py: 0.5, borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap',
+    px: 1.5, py: 0.5, borderRadius: 0, fontWeight: 'bold', whiteSpace: 'nowrap',
   };
 }
 
@@ -88,7 +88,7 @@ function StatCard({ label, value, alert }) {
     <Paper
       elevation={0}
       sx={{
-        ...fx.glassCard, borderRadius: '16px', p: 2, flex: '1 1 140px', minWidth: 140,
+        ...fx.glassCard, borderRadius: 0, p: 2, flex: '1 1 140px', minWidth: 140,
         ...(alert ? { borderColor: (t) => t.palette.error.main, bgcolor: (t) => alpha(t.palette.error.main, 0.06) } : {}),
       }}
     >
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
         </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: '16px' }} action={
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 0 }} action={
             <Button color="inherit" size="small" onClick={fetchMetrics}>Retry</Button>
           }>
             {error}
@@ -253,7 +253,7 @@ export default function AdminDashboard() {
         )}
 
         {/* NAVIGATION TABS */}
-        <Paper elevation={0} sx={{ ...fx.glassCard, borderRadius: '20px', overflow: 'hidden' }}>
+        <Paper elevation={0} sx={{ ...fx.glassCard, borderRadius: 0, overflow: 'hidden' }}>
           <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="scrollable" scrollButtons="auto" sx={{ borderBottom: `1px solid ${tokens.border}`, bgcolor: tokens.surfaceMuted }}>
             <Tab icon={<Speed />} iconPosition="start" label="AI Telemetry" />
             <Tab icon={<MenuBook />} iconPosition="start" label="Lesson Progress" />
@@ -321,7 +321,7 @@ export default function AdminDashboard() {
                           <TableCell>{fmtDate(row.completed_at)}</TableCell>
                           <TableCell><EmailCell email={row.email} onClick={openPatient} /></TableCell>
                           <TableCell align="right">
-                            <Box component="span" sx={{ bgcolor: tokens.tealSurface, color: tokens.tealDark, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 1, border: `1px solid ${tokens.border}` }}>
+                            <Box component="span" sx={{ bgcolor: tokens.tealSurface, color: tokens.tealDark, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 0, border: `1px solid ${tokens.border}` }}>
                               Module {row.lesson_id}
                             </Box>
                           </TableCell>
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
         </Paper>
 
         {/* PER-PATIENT DRILL-DOWN DIALOG */}
-        <Dialog open={!!patientEmail} onClose={() => setPatientEmail(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '20px' } }}>
+        <Dialog open={!!patientEmail} onClose={() => setPatientEmail(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 0 } }}>
           <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 1 }}>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="h6" fontWeight={800} noWrap>Patient Detail</Typography>
@@ -460,7 +460,7 @@ export default function AdminDashboard() {
                     <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Coping Tools Used</Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       {patientData.tools.map((t, i) => (
-                        <Box key={i} component="span" sx={{ bgcolor: tokens.surfaceHover, color: tokens.textPrimary, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 1, border: `1px solid ${tokens.border}`, fontSize: '0.8rem' }}>
+                        <Box key={i} component="span" sx={{ bgcolor: tokens.surfaceHover, color: tokens.textPrimary, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 0, border: `1px solid ${tokens.border}`, fontSize: '0.8rem' }}>
                           {toolLabel(t.tool_id)} ×{t.uses}
                           {t.avg_drop != null && (
                             <Box component="span" sx={{ ml: 0.75, fontWeight: 400, color: t.avg_drop > 0 ? 'success.main' : (t.avg_drop < 0 ? 'error.main' : 'text.secondary') }}>
@@ -478,7 +478,7 @@ export default function AdminDashboard() {
                     <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Completed Modules</Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       {patientData.lessons.map((l, i) => (
-                        <Box key={i} component="span" sx={{ bgcolor: tokens.tealSurface, color: tokens.tealDark, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 1, border: `1px solid ${tokens.border}`, fontSize: '0.8rem' }}>
+                        <Box key={i} component="span" sx={{ bgcolor: tokens.tealSurface, color: tokens.tealDark, fontWeight: 700, px: 1.5, py: 0.5, borderRadius: 0, border: `1px solid ${tokens.border}`, fontSize: '0.8rem' }}>
                           Module {l.lesson_id}
                         </Box>
                       ))}
