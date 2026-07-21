@@ -3,9 +3,10 @@ import { useRouter } from 'next/router';
 import {
   Box, Tabs, Tab, IconButton, Tooltip,
   Typography, Button, TextField, Paper, Avatar, Alert,
-  Stepper, Step, StepLabel, StepButton, Divider, Chip, Link, LinearProgress // 👈 Added Chip, Link, LinearProgress
+  Stepper, Step, StepLabel, StepButton, Divider, Chip, Link, LinearProgress, // 👈 Added Chip, Link, LinearProgress
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress
 } from '@mui/material';
-import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person, Mic, MicNone, VolumeUp, VolumeOff, FactCheck } from '@mui/icons-material';
+import { Create, Chat as ChatIcon, MenuBook, ExitToApp, CheckCircle, Lock, ArrowBack, ArrowForward, HelpOutline, AutoAwesome, Psychology, Person, Mic, MicNone, VolumeUp, VolumeOff, FactCheck, DeleteForever } from '@mui/icons-material';
 import { fx, tokens } from '../lib/theme';
 import { isDictationSupported, createDictation, speak, stopSpeaking } from '../lib/voice';
 import { apiFetch } from '../lib/api';
@@ -300,7 +301,7 @@ const CHAT_SUGGESTIONS = [
   "I've been feeling anxious lately",
   'Help me reframe a negative thought',
   "I'm overwhelmed and don't know where to start",
-  'What does the Gita say about letting go?',
+  'How do I let go of things I can’t control?',
 ];
 
 // Mood scale shared by the check-in selector and the diary history. `v` is the
@@ -386,7 +387,7 @@ export default function Dashboard() {
   // General Chat State
   const [chatInput, setChatInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [chatMessages, setChatMessages] = useState([{ role: 'ai', content: 'Hello Revanth. I am your Cognitive Space guide. How are you feeling today?' }]);
+  const [chatMessages, setChatMessages] = useState([{ role: 'ai', content: 'Hello Revanth. I am your Pl.AIto guide. How are you feeling today?' }]);
 
   // 🎙️ Voice State (dictation + read-aloud). See lib/voice.js.
   const [isListening, setIsListening] = useState(false);
@@ -462,7 +463,7 @@ export default function Dashboard() {
       setUserName(userData.name || 'Guest');
       
       setChatMessages([
-        { role: 'ai', content: `Hello ${userData.name || 'Guest'}. I am your Cognitive Space guide. How are you feeling today?` }
+        { role: 'ai', content: `Hello ${userData.name || 'Guest'}. I am your Pl.AIto guide. How are you feeling today?` }
       ]);
     } else {
       setUserName('Guest');
@@ -530,6 +531,35 @@ export default function Dashboard() {
     // Clear the name when they log out for privacy!
     localStorage.removeItem('userName');
     router.push('/');
+  };
+
+  // --- Permanent account deletion (privacy-policy / app-store requirement) ---
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleDeleteAccount = async () => {
+    setDeleteError('');
+    setDeleteBusy(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await apiFetch('/api/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || data.message || 'Could not delete your account. Please try again.');
+      }
+      // Wipe the local session so nothing lingers, then leave.
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userName');
+      router.push('/');
+    } catch (err) {
+      setDeleteError(err.message);
+      setDeleteBusy(false);
+    }
   };
 
   const handleSaveDiary = async () => {
@@ -875,7 +905,7 @@ const handleSendMessage = async (textArg) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.25, sm: 1.75 }, minWidth: 0 }}>
             <Box sx={{ width: { xs: 38, sm: 44 }, height: { xs: 38, sm: 44 }, flexShrink: 0, borderRadius: '12px', display: 'grid', placeItems: 'center', color: '#FFFFFF', background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: { xs: 21, sm: 25 } }} /></Box>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="h5" fontWeight={800} sx={{ ...fx.brandGradientText, lineHeight: 1.1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>Cognitive Space</Typography>
+              <Typography variant="h5" fontWeight={800} sx={{ ...fx.brandGradientText, lineHeight: 1.1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>Pl.AIto</Typography>
               <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.25 }}>
                 Welcome back, {userName || 'friend'}.
               </Typography>
@@ -1550,6 +1580,44 @@ const handleSendMessage = async (textArg) => {
           </TabPanel>
 
         </Paper>
+
+        {/* Discreet, always-reachable footer: privacy policy + account deletion
+            (both are app-store requirements for an account-based app). */}
+        <Typography variant="caption" sx={{ flexShrink: 0, textAlign: 'center', mt: 1.25, color: 'text.secondary', opacity: 0.7 }}>
+          <Box component="span" sx={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => router.push('/privacy')}>
+            Privacy Policy
+          </Box>
+          <Box component="span" sx={{ mx: 1, opacity: 0.5 }}>·</Box>
+          <Box component="span" sx={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setDeleteError(''); setDeleteOpen(true); }}>
+            Delete account
+          </Box>
+        </Typography>
+
+        {/* Confirmation dialog for permanent, irreversible account deletion. */}
+        <Dialog open={deleteOpen} onClose={() => !deleteBusy && setDeleteOpen(false)}
+          PaperProps={{ sx: { ...fx.glassCard, borderRadius: '16px', p: 1 } }}>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 800, color: 'error.main' }}>
+            <DeleteForever /> Delete your account?
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ color: 'text.secondary' }}>
+              This permanently deletes your account and <strong>all</strong> of your data —
+              journal entries, check-in history, questionnaire scores, lesson progress, and
+              safety records. This <strong>cannot be undone</strong>.
+            </DialogContentText>
+            {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setDeleteOpen(false)} disabled={deleteBusy} sx={{ color: 'text.secondary', textTransform: 'none' }}>
+              Cancel
+            </Button>
+            <Button onClick={handleDeleteAccount} disabled={deleteBusy} variant="contained" color="error"
+              startIcon={deleteBusy ? <CircularProgress size={18} color="inherit" /> : <DeleteForever />}
+              sx={{ fontWeight: 700, textTransform: 'none' }}>
+              {deleteBusy ? 'Deleting…' : 'Delete permanently'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Always-available in-the-moment coping toolkit (FAB + modal). */}
         <SosLauncher sessionId={sessionId} />

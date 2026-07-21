@@ -68,7 +68,7 @@ export default function Register() {
         {/* Brand */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
           <Box sx={{ width: 56, height: 56, borderRadius: '16px', display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
-          <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Cognitive Space</Typography>
+          <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Pl.AIto</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
             Start your journey to better mental wellbeing.
           </Typography>
@@ -128,6 +128,13 @@ export default function Register() {
 
         <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 3, color: 'text.secondary', opacity: 0.75 }}>
           In crisis? Call or text <strong>988</strong> (US) anytime — you&apos;re not alone.
+        </Typography>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1.25, color: 'text.secondary', opacity: 0.7 }}>
+          By creating an account you agree to our{' '}
+          <Box component="span" sx={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => router.push('/privacy')}>
+            Privacy Policy
+          </Box>
+          .
         </Typography>
       </Box>
     </Box>

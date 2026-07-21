@@ -71,9 +71,9 @@ export default function Login() {
         {/* Brand */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
           <Box sx={{ width: 56, height: 56, borderRadius: '16px', display: 'grid', placeItems: 'center', color: '#FFFFFF', mb: 2, background: fx.tealGradient, boxShadow: fx.glow }}><Psychology sx={{ fontSize: 30 }} /></Box>
-          <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Cognitive Space</Typography>
+          <Typography variant="h4" fontWeight={800} sx={{ ...fx.brandGradientText }}>Pl.AIto</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, textAlign: 'center' }}>
-            Bhagavad Gita–informed CBT, in plain modern language.
+            Ancient wisdom, reframed as modern CBT — in plain language.
           </Typography>
         </Box>
 
@@ -135,6 +135,11 @@ export default function Login() {
 
         <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 3, color: 'text.secondary', opacity: 0.75 }}>
           In crisis? Call or text <strong>988</strong> (US) anytime — you&apos;re not alone.
+        </Typography>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1.25, color: 'text.secondary', opacity: 0.7 }}>
+          <Box component="span" sx={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => router.push('/privacy')}>
+            Privacy Policy
+          </Box>
         </Typography>
       </Box>
     </Box>
