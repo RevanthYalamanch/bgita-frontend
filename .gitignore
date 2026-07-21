@@ -4,3 +4,7 @@ out/
 
 # local env overrides (Next.js convention) — keep committed .env for shared defaults
 .env*.local
+
+# native build artifacts — Capacitor/Android/iOS release outputs, not source
+*.apk
+*.aab
