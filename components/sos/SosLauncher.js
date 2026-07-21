@@ -174,8 +174,10 @@ export default function SosLauncher({ sessionId }) {
         aria-label="Open the reset toolkit for in-the-moment coping"
         sx={{
           position: 'fixed',
-          bottom: { xs: 20, sm: 28 },
-          right: { xs: 20, sm: 28 },
+          // Offset by the iOS home-indicator / side safe-area (0 elsewhere) so
+          // the FAB never sits under the indicator or a landscape notch.
+          bottom: { xs: 'calc(env(safe-area-inset-bottom) + 20px)', sm: 'calc(env(safe-area-inset-bottom) + 28px)' },
+          right: { xs: 'calc(env(safe-area-inset-right) + 20px)', sm: 'calc(env(safe-area-inset-right) + 28px)' },
           zIndex: 1200,
           bgcolor: tokens.teal,
           color: '#FFFFFF',

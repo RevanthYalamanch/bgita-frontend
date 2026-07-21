@@ -42,8 +42,9 @@ export default function ThemeToggle({ floating = false }) {
     <Box
       sx={{
         position: 'fixed',
-        top: 16,
-        right: 16,
+        // Keep clear of the iOS status bar / notch (insets are 0 on web).
+        top: 'calc(env(safe-area-inset-top) + 16px)',
+        right: 'calc(env(safe-area-inset-right) + 16px)',
         zIndex: 1300,
         bgcolor: 'background.paper',
         border: '1px solid',

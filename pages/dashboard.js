@@ -898,7 +898,16 @@ const handleSendMessage = async (textArg) => {
 
 
   return (
-      <Box sx={{ maxWidth: 1000, mx: 'auto', p: { xs: 2, md: 4 }, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{
+        maxWidth: 1000, mx: 'auto', height: '100dvh', display: 'flex', flexDirection: 'column',
+        // Base padding + iOS safe-area insets (0 on web/non-notched devices).
+        // border-box keeps height at 100dvh, so insets pad content away from the
+        // status bar / home indicator instead of overflowing the viewport.
+        pt: { xs: 'calc(env(safe-area-inset-top) + 16px)', md: 'calc(env(safe-area-inset-top) + 32px)' },
+        pb: { xs: 'calc(env(safe-area-inset-bottom) + 16px)', md: 'calc(env(safe-area-inset-bottom) + 32px)' },
+        pl: { xs: 'calc(env(safe-area-inset-left) + 16px)', md: 'calc(env(safe-area-inset-left) + 32px)' },
+        pr: { xs: 'calc(env(safe-area-inset-right) + 16px)', md: 'calc(env(safe-area-inset-right) + 32px)' },
+      }}>
         
         {/* HEADER */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 3 }}>
